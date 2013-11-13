@@ -4,7 +4,8 @@ The project 'aurora' is developed using 'Netflix OSS - Asgard' framework to mana
 
 ## DOWNLOAD
 
-Grab the [latest binary release](https://ebay.app.box.com/s/4hd90n6u1dc6o55314ak)
+Grab the [latest standalone jar release](https://ebay.box.com/s/4elhlhfvdce1t5sq2lm2)
+Grab the [latest war release](https://ebay.box.com/s/c29kypl21q7tj62n3czw)
 
 ## How to run aurora?
 
