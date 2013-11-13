@@ -12,9 +12,9 @@ class TestSecurityGroup(UIBaseTest):
     def test_01_create_security_group(self):
         self.uidriver.click(*self.uimap.bt_create)
         name = self.utils.generate_name(4)
-        self.uidriver.enter_text(self.uimap.ed_sg_name, name)
+        self.uidriver.enter_text(self.uimap.ed_name, name)
         description = "Test"
-        self.uidriver.enter_text(self.uimap.ed_sg_description, description)
+        self.uidriver.enter_text(self.uimap.ed_description, description)
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
         m = self.uidriver.find_row(self.uimap.tbl_security_groups, lambda r: r["NAME"] == name)
@@ -25,14 +25,15 @@ class TestSecurityGroup(UIBaseTest):
 
     def test_02_list_security_groups(self):
         # REVIEW: copy-paste error in the message string! Two times!
-        ok_(len(self.security_groups) > 0, "Volume snapshot creation failed so cannot filter the list.")
+        ok_(len(self.security_groups) > 0, "Security Group creation failed so cannot filter the list.")
         name = self.security_groups[0]
         self.uidriver.filter_table(name)
         rows = self.uidriver.parse_table(self.uimap.tbl_security_groups)
-        ok_(len(rows) == 1 and rows[0]['NAME'] == name, "Failed to filter list of volume snapshots.")
+        ok_(len(rows) == 1 and rows[0]['NAME'] == name, "Failed to filter list of Security Group.")
         self.uidriver.filter_table('')
 
     def test_03_add_rule(self):
+        ok_(len(self.security_groups) > 0, "Security Group creation failed so cannot filter the list.")
         name = self.security_groups[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_edit_rules)
@@ -54,6 +55,7 @@ class TestSecurityGroup(UIBaseTest):
         self.port.append(port)
 
     def test_04_delete_rule(self):
+        ok_(len(self.security_groups) > 0, "Security Group creation failed so cannot filter the list.")
         ok_(len(self.port) > 0, "Rule creation failed so cannot delete the rule.")
         name = self.security_groups[0]
         self.uidriver.click(By.LINK_TEXT, name)
@@ -67,6 +69,7 @@ class TestSecurityGroup(UIBaseTest):
 
 
     def test_05_delete_security_group(self):
+        ok_(len(self.security_groups) > 0, "Security Group creation failed so cannot filter the list.")
         # REVIEW: why anlayse port? why not security group? rule is already deleted!
         ok_(len(self.port) > 0, "Rule creation failed so cannot delete the rule.")
         name = self.security_groups[0]

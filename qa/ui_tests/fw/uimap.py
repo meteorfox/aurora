@@ -30,11 +30,11 @@ class UIMap(object):
     ed_filter2 = (By.ID, "filter_1")  # filter for the 2nd table on the page (if the table exists)
     counter = (By.ID, "counter")
     counter1 = (By.ID, "counter_1")
-
+    cb_tenant = (By.ID, "select_tenantId")
     dlg_confirm = (By.ID, "confirmationDialog")
 
     # Login
-    environment = (By.ID, "select_environment")
+    cb_environment = (By.ID, "select_environment")
     username_input = (By.ID, "username")
     password_input = (By.ID, "password")
     login_button = (By.ID, "submit")
@@ -96,7 +96,6 @@ class UIMap(object):
     cb_flavor = (By.ID, "select_cb_flavor")
     cb_keypair = (By.ID, "select_cb_keypair")
     cb_volume_options = (By.ID, "select_cb_options")
-    # cb_volume_snapshot = (By.ID, "select_cb_volumeSnapshot")
     cb_volume_snapshot = (By.ID, "select_cb_vol_type")
 
     bt_create_snapshot = (By.ID, "snapshot")
@@ -118,6 +117,7 @@ class UIMap(object):
     ed_min_ram = (By.ID, "minRam")
     cb_format = (By.ID, "select_diskFormat")
     select_format_img = (By.ID, "select_img")
+    select_format_qcow2 = (By.ID, "select_qcow2")
     select_format_iso = (By.ID, "select_iso")
     select_format_ami = (By.ID, "select_diskFormat_item_ami")
     chk_public = (By.ID, "shared")
@@ -211,8 +211,6 @@ class UIMap(object):
     select_icmp = (By.ID, "select_ICMP")
     cb_source_group = (By.ID, "select_select_sgShow_sourceGroup")
     select_cidr = (By.ID, "select_CIDR")
-    ed_sg_name = (By.ID, "input_sgCreate_name")
-    ed_sg_description = (By.ID, "input_sgCreate_description")
     ed_cidr = (By.ID, "input_sgShow_cidr")
     ed_from_port = (By.ID, "input_sgShow_fromPort")
     ed_to_port = (By.ID, "input_sgShow_toPort")

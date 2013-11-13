@@ -1,52 +1,66 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="lbaas"/>
+    <meta name="menu-level-2" content="pools"/>     
     <title>Pools & Services</title>
-</head>
-<body>
-<div class="body">
-    <h1>Pools & Services</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:hasErrors bean="${cmd}">
-        <div id="error_message" class="error">
-            <g:renderErrors bean="${cmd}" as="list"/>
+  </head>
+  <body>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="alert alert-info">${flash.message}</div>
+            </g:if>          
+            <g:hasErrors bean="${cmd}">
+              <div id="error_message" class="alert alert-error">
+                <g:renderErrors bean="${cmd}" as="list"/>
+              </div>
+            </g:hasErrors>
+          </div>
         </div>
-    </g:hasErrors>
-    <g:form method="post">
-        <div class="list">
-            <div class="buttons">
-                <g:link class="create" elementId="addPool" action="addPool" title="Add new pool">Add new pool</g:link>
+        <g:form method="post">
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Pools</span>
+              <ul class="box-toolbar">
+                <li><g:link class="btn btn-xs btn-green" elementId="addPool" action="addPool">Add New Pool</g:link></li>
                 <g:if test="${pools}">
-                    <g:buttonSubmit class="stop" id="delete" value="Delete" action="delete" data-warning="Really delete pool(s)?" title="Delete selected pool(s)"/>
+                  <li><g:buttonSubmit class="btn btn-xs btn-red delete" id="delete" value="Delete" action="delete" 
+                                  data-warning="Really delete pool(s)?" title="Delete selected pool(s)"/></li>
                 </g:if>
+              </ul>
             </div>
-               <table id="table_lbassListPools">
+            <div class="box-content">
+
+              <table id="table_lbassListPools" class="table table-normal filtered">
                 <thead>
-                <tr>
-                    <th class="checkboxTd">&thinsp;x</th>
-                    <th>Name</th>
-                    <th>Method</th>
-                    <th>Monitors</th>
-                    <th>Enabled</th>
-                </tr>
+                  <tr>
+                    <td class="checkboxTd">&thinsp;x</td>
+                    <td>Name</td>
+                    <td>Method</td>
+                    <td>Monitors</td>
+                    <td>Enabled</td>
+                  </tr>
                 </thead>
                 <tbody>
                 <g:each var="pool" in="${pools}" status="i">
-                    <tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
-                        <td><g:checkBox id="checkBox_${pool.name}" name="selectedPools" value="${pool.name}" checked="0" class="requireLogin"/></td>
-                        <td><g:link id="${pool.name}" controller="lbaas" action="showPool">${pool.name}</g:link></td>
-                        <td>${pool.method}</td>
-                        <td>${pool.monitors?.join(', ')}</td>
-                        <td>${pool.enabled}</td>
-                    </tr>
+                  <tr>
+                    <td><g:checkBox id="checkBox_${pool.name}" name="selectedPools" value="${pool.name}" checked="0" class="requireLogin"/></td>
+                  <td><g:link id="${pool.name}" controller="lbaas" action="showPool">${pool.name}</g:link></td>
+                  <td>${pool.method}</td>
+                  <td>${pool.monitors?.join(', ')}</td>
+                  <td>${pool.enabled}</td>
+                  </tr>
                 </g:each>
-        </tbody>
-    </table>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </g:form>
+      </div>
     </div>
-    </g:form>
-</div>
-</body>
+  </body>
 </html>

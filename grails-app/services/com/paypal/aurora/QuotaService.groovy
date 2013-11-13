@@ -27,22 +27,53 @@ class QuotaService {
     }
 
     Quota[] getQuotasByTenantId(def tenantId) {
-        def resp = openStackRESTService.get(openStackRESTService.NOVA, OS_QUOTAS + "/${tenantId}")
+        def resp = openStackRESTService.get(service, OS_QUOTAS + "/${tenantId}")
         def quotas = []
         for (quota in resp.quota_set) {
             if (quota.key != "id") {
                 quotas << new Quota(quota)
             }
         }
+        if (!isFolsom()) {
+            resp = openStackRESTService.get(openStackRESTService.NOVA, OS_QUOTAS + "/${tenantId}")
+            for (quota in resp.quota_set) {
+                if (quota.key != "id") {
+                    quotas << new Quota(quota)
+                }
+            }
+        }
         quotas.sort { it.displayName as String }
     }
 
+    private boolean isFolsom() {
+        !sessionStorageService.openStackVersion || sessionStorageService.openStackVersion.equalsIgnoreCase('folsom')
+    }
+
     def setQuotasByTenantId(def quotas, def tenantId) {
+        if (!isFolsom()) {
+            def quotaSetGrizzlyNova = [:]
+            for (Quota quota in quotas) {
+                quotaSetGrizzlyNova[quota.name] = quota.limit
+            }
+            quotaSetGrizzlyNova.remove('volumes')
+            quotaSetGrizzlyNova.remove('gigabytes')
+            quotaSetGrizzlyNova.remove('snapshots')
+
+            openStackRESTService.put(openStackRESTService.NOVA, OS_QUOTAS + "/${tenantId}", null, [quota_set: quotaSetGrizzlyNova])
+        }        
         def quotaSet = [:]
         for (Quota quota in quotas) {
             quotaSet[quota.name] = quota.limit
         }
-        openStackRESTService.put(openStackRESTService.NOVA, OS_QUOTAS + "/${tenantId}", null, [quota_set: quotaSet])
+        openStackRESTService.put(service, OS_QUOTAS + "/${tenantId}", null, [quota_set: quotaSet])
+    }
+
+    private String getService() {
+        if (isFolsom()) {
+            return openStackRESTService.NOVA
+        } else {
+            return openStackRESTService.NOVA_VOLUME
+        }
     }
 
     List<QuotaUsage> getQuotaUsage(def tenantId) {
@@ -53,7 +84,7 @@ class QuotaService {
 
     Quota getQuotaByName(String name) {
         for (Quota quota : getAllQuotas()) {
-            if(quota.name.equals(name)) {
+            if (quota.name.equals(name)) {
                 return quota
             }
         }

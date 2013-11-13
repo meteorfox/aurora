@@ -2,41 +2,56 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="compute"/> 
+    <meta name="menu-level-2" content="images"/> 
     <title>Images</title>
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'autorefresh.js')}"></script>    
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'image-ui.js')}"></script>
 </head>
 
 <body>
-<script type="text/javascript" src="/js/image-ui.js"></script>
-<script type="text/javascript" src="/js/autorefresh.js"></script>
 <div class="body">
-    <h1>Images</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
+<div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <g:if test="${flash.message}">
+          <div id="message" class="message alert alert-info">${flash.message}</div>
+        </g:if>          
+      </div>
+    </div>
+      <div class="row">
+      <div class="col-md-12">
     <g:form method="post">
-        <div class="list">
-            <div class="buttons">
-                <shiro:hasRole name="${Constant.ROLE_ADMIN}"><g:link elementId="create" class="create" action="create" title="Create new image">Create Image</g:link></shiro:hasRole>
-            </div>
-            <table class="sortable" id="images">
+        <div class="box">
+          <div class="box-header">
+            <span class="title">Images</span>
+            <ul class="box-toolbar">
+                <shiro:hasRole name="${Constant.ROLE_ADMIN}">
+                  <li><g:link elementId="create" class="btn btn-xs btn-green" action="create" title="Create new image">Create Image</g:link></li>
+                </shiro:hasRole>
+            </ul>
+          </div>
+
+          <div class="box-content">
+            <table class="table table-normal sortable filtered" id="images">
                 <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Public</th>
-                    <th>Format</th>
+                    <td>Name</td>
+                    <td>Type</td>
+                    <td>Status</td>
+                    <td>Public</td>
+                    <td>Format</td>
                 </tr>
                 </thead>
                 <tbody>
                 <g:each var="image" in="${images}" status="i">
-                    <tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
+                    <tr>
                         <td class='image_show_link'><g:linkObject elementId="image-${image.id}" displayName="${image.name}" type="image" id="${image.id}"/></td>
                         <td>${image.type}</td>
                         <td class='image_status'>${image.status}
                             <g:if test="${image.status != 'active' && image.status != 'killed'}">
-                                <img src="${resource(dir: 'images', file: 'spinner.gif')}"/>
+                                <i class="icon-cog icon-spin"></i>
                             </g:if></td>
                         <td>${image.shared}</td>
                         <td>${image.diskFormat}</td>
@@ -45,17 +60,27 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="paginateButtons">
+        <div class="box-footer">
+        <div class="paginateButtons"></div>
         </div>
+        </div>      
     </g:form>
 
-    <h1>Instance Snapshots</h1>
+      </div>
+      </div>
+      <div class="row">
+      <div class="col-md-12">
 
     <g:form method="post">
-        <div class="list">
-            <div class="buttons"></div>
-            <table class="sortable twoTablesOnPage" id="snapshots">
+        <div class="box">
+          <div class="box-header">
+            <span class="title">Instance Snapshots</span>
+            <ul class="box-toolbar">
+            </ul>
+          </div>
+
+          <div class="box-content">
+            <table class="table table-normal sortable filtered" id="snapshots">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -81,10 +106,15 @@
                 </tbody>
             </table>
         </div>
-
+          <div class="box-footer">
         <div class="paginateButtons">
         </div>
+          </div>
+        </div>
     </g:form>
+      </div>
+      </div>
+</div>
 </div>
 </body>
 </html>

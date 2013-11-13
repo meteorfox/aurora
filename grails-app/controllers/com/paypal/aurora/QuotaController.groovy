@@ -11,7 +11,6 @@ class QuotaController {
     def static allowedMethods = [list: ['GET', 'POST']]
 
     def quotaService
-    def sessionStorageService
 
     def index = { redirect(action: 'list', params: params) }
 
@@ -26,7 +25,7 @@ class QuotaController {
             }
         } catch (RestClientRequestException e){
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             def quotas = []
             def model = [quotas : quotas, errors : error, flash: [message: error]]
             withFormat {

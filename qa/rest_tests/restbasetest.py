@@ -39,5 +39,5 @@ class RESTBaseTest(object):
     @classmethod
     def teardown_class(cls):
         cls.auth.logout()
-        cls.session.close()
+        # cls.session.close()
 

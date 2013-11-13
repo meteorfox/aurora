@@ -9,14 +9,7 @@ class UrlMappings {
             }
         }
 
-        // Optionally allow the region in the URL to the left of the controller.
-        "/$region/$controller/$action?/$id?" {
-            constraints {
-                // apply constraints here
-            }
-        }
-
-        "/"(controller: 'instance', action: 'list')
+        "/"(controller: 'defaultMapping')
 
         // http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
         "400"(view: '/error')

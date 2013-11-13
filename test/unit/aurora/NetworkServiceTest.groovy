@@ -3,9 +3,9 @@ package aurora
 import com.paypal.aurora.NetworkService
 import com.paypal.aurora.OpenStackRESTService
 import com.paypal.aurora.QuantumDNSService
-import com.paypal.aurora.SessionStorageService
 import com.paypal.aurora.model.ExternalFloatingIp
 import com.paypal.aurora.model.FloatingIp
+import com.paypal.aurora.model.SessionStorage
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
 import org.gmock.WithGMock
@@ -23,15 +23,17 @@ class NetworkServiceTest extends GMockTestCase {
     static final NOVA = 'compute'
     static final QUANTUM = 'network'
 
-    static final flip1 = [id: 'flipId1', pool: 'pool1', ip: '127.0.1.0', fixed_ip: null, instance_id: 'instanceId1']
-    static final flip2 = [id: 'flipId2', pool: 'pool2', ip: '127.0.2.0', fixed_ip: null, instance_id: null]
+    static final FLIP1 = [id: 'flipId1', pool: 'pool1', ip: '127.0.1.0', fixed_ip: null, instance_id: 'instanceId1']
+    static final FLIP2 = [id: 'flipId2', pool: 'pool2', ip: '127.0.2.0', fixed_ip: null, instance_id: null]
 
-    static final eflip1 = [id: 'eflipId1', router_id: 'routerId1', tenant_id: 'tenantId1', port_id: 'portId1', fixed_network_id: 'fixedNetworkId1', fixed_ip_address: 'fixedIp1', floating_ip_address: 'floatingIp1']
-    static final eflip2 = [id: 'eflipId2', router_id: 'routerId2', tenant_id: 'tenantId2', port_id: 'portId2', fixed_network_id: 'fixedNetworkId2', fixed_ip_address: 'fixedIp2', floating_ip_address: 'floatingIp2']
+    static final EFLIP1 = [id: 'eflipId1', router_id: 'routerId1', tenant_id: 'tenantId1', port_id: 'portId1', fixed_network_id: 'fixedNetworkId1', fixed_ip_address: 'fixedIp1', floating_ip_address: 'floatingIp1']
+    static final EFLIP2 = [id: 'eflipId2', router_id: 'routerId2', tenant_id: 'tenantId2', port_id: 'portId2', fixed_network_id: 'fixedNetworkId2', fixed_ip_address: 'fixedIp2', floating_ip_address: 'floatingIp2']
 
-    static final fqdn1 = 'foo1.bar.paypal.com'
-    static final fqdn2 = 'foo2.bar.paypal.com'
-    static final zone = 'zone'
+    static final FQDN1 = 'foo1.bar.paypal.com'
+    static final FQDN2 = 'foo2.bar.paypal.com'
+
+    static final ZONE = 'paypal.com'
+    static final HOST = 'foobar'
 
     @Before
     void setUp() {
@@ -40,10 +42,10 @@ class NetworkServiceTest extends GMockTestCase {
         service.openStackRESTService.NOVA.returns(NOVA).stub()
         service.openStackRESTService.QUANTUM.returns(QUANTUM).stub()
 
-        service.openStackRESTService.get(NOVA, FLOATING_IPS).returns([floating_ips: [flip1, flip2]]).stub()
-        service.openStackRESTService.get(QUANTUM, "$PREFIX/$QUANTUM_FLIP_PATH").returns([floatingips: [eflip1, eflip2]]).stub()
+        service.openStackRESTService.get(NOVA, FLOATING_IPS).returns([floating_ips: [FLIP1, FLIP2]]).stub()
+        service.openStackRESTService.get(QUANTUM, "$PREFIX/$QUANTUM_FLIP_PATH").returns([floatingips: [EFLIP1, EFLIP2]]).stub()
 
-        SessionStorageService sessionStorageService = mock(SessionStorageService)
+        SessionStorage sessionStorageService = mock(SessionStorage)
         service.sessionStorageService = sessionStorageService
 
         service.quantumDNSService = mock(QuantumDNSService)
@@ -53,19 +55,19 @@ class NetworkServiceTest extends GMockTestCase {
         service.quantumDNSService.isEnabled().returns(false).stub()
 
         play {
-            assertEquals([new FloatingIp(flip1), new FloatingIp(flip2)], service.getFloatingIps())
+            assertEquals([new FloatingIp(FLIP1), new FloatingIp(FLIP2)], service.getFloatingIps())
         }
 
     }
 
     def testGetFloatingIpsWithQuantumDNSService() {
         service.quantumDNSService.isEnabled().returns(true).stub()
-        service.quantumDNSService.getFqdnByIp(flip1.ip).returns(fqdn1).times(1)
-        service.quantumDNSService.getFqdnByIp(flip2.ip).returns(fqdn2).times(1)
-        FloatingIp flip1 = new FloatingIp(flip1);
-        FloatingIp flip2 = new FloatingIp(flip2);
-        flip1.fqdn = fqdn1
-        flip2.fqdn = fqdn2
+        service.quantumDNSService.getFqdnByIp(FLIP1.ip).returns(FQDN1).times(1)
+        service.quantumDNSService.getFqdnByIp(FLIP2.ip).returns(FQDN2).times(1)
+        FloatingIp flip1 = new FloatingIp(FLIP1);
+        FloatingIp flip2 = new FloatingIp(FLIP2);
+        flip1.fqdn = FQDN1
+        flip2.fqdn = FQDN2
 
         play {
             assertEquals([flip1,flip2], service.getFloatingIps())
@@ -77,22 +79,22 @@ class NetworkServiceTest extends GMockTestCase {
         service.quantumDNSService.isEnabled().returns(false).stub()
 
         play {
-            assertEquals([new FloatingIp(flip2)], service.getUnassignedFloatingIps())
+            assertEquals([new FloatingIp(FLIP2)], service.getUnassignedFloatingIps())
         }
 
     }
 
     def testGetExternalFloatingIps() {
         play {
-            assertEquals([new ExternalFloatingIp(eflip1), new ExternalFloatingIp(eflip2)], service.getExternalFloatingIps())
+            assertEquals([new ExternalFloatingIp(EFLIP1), new ExternalFloatingIp(EFLIP2)], service.getExternalFloatingIps())
         }
     }
 
     def testGetExternalFloatingIpsMap() {
 
         def map = [:]
-        map[eflip1.fixed_ip_address] = eflip1.floating_ip_address
-        map[eflip2.fixed_ip_address] = eflip2.floating_ip_address
+        map[EFLIP1.fixed_ip_address] = EFLIP1.floating_ip_address
+        map[EFLIP2.fixed_ip_address] = EFLIP2.floating_ip_address
 
         play {
             assertEquals(map, service.getExternalFloatingIpsMap())
@@ -103,77 +105,86 @@ class NetworkServiceTest extends GMockTestCase {
         service.quantumDNSService.isEnabled().returns(false).stub()
 
         play {
-            assertEquals([new FloatingIp(flip1)], service.getFloatingIpsForInstance(flip1.instance_id))
+            assertEquals([new FloatingIp(FLIP1)], service.getFloatingIpsForInstance(FLIP1.instance_id))
         }
 
     }
 
     def testGetFloatingIpById() {
-        service.openStackRESTService.get(NOVA, "$FLOATING_IPS/$flip1.id").returns([floating_ip: flip1])
+        service.openStackRESTService.get(NOVA, "$FLOATING_IPS/$FLIP1.id").returns([floating_ip: FLIP1])
 
         play {
-            assertEquals(new FloatingIp(flip1), service.getFloatingIpById(flip1.id))
+            assertEquals(new FloatingIp(FLIP1), service.getFloatingIpById(FLIP1.id))
         }
 
     }
 
     def testGetFloatingIpPools(){
-        service.openStackRESTService.get(NOVA, POOLS).returns([floating_ip_pools: [[name: flip1.pool]]])
+        service.openStackRESTService.get(NOVA, POOLS).returns([floating_ip_pools: [[name: FLIP1.pool]]])
         play {
-            assertEquals([[name: flip1.pool]], service.floatingIpPools)
+            assertEquals([[name: FLIP1.pool]], service.floatingIpPools)
         }
     }
 
     def testAllocateFloatingIpWithOutQuantumDNSService() {
-        service.openStackRESTService.post(NOVA, FLOATING_IPS, [pool: flip1.pool]).returns([floating_ip: flip1]).times(1)
+        service.openStackRESTService.post(NOVA, FLOATING_IPS, [pool: FLIP1.pool]).returns([floating_ip: FLIP1]).times(1)
         service.quantumDNSService.isEnabled().returns(false).stub()
 
         play {
-            assertEquals([floating_ip: flip1], service.allocateFloatingIp(flip1.pool))
+            assertEquals([floating_ip: FLIP1], service.allocateFloatingIp(FLIP1.pool))
         }
     }
 
     def testAllocateFloatingIpWithQuantumDNSService() {
-        service.openStackRESTService.post(NOVA, FLOATING_IPS, [pool: flip1.pool]).returns([floating_ip: flip1]).times(1)
+        service.openStackRESTService.post(NOVA, FLOATING_IPS, [pool: FLIP1.pool]).returns([floating_ip: FLIP1]).times(1)
         service.quantumDNSService.isEnabled().returns(true).stub()
-        service.quantumDNSService.addDnsRecord(null, flip1.ip, null).returns().times(1)
+        service.quantumDNSService.addDnsRecord(HOST, FLIP1.ip, ZONE).returns().times(1)
 
         play {
-            assertEquals([floating_ip: flip1], service.allocateFloatingIp(flip1.pool))
+            assertEquals([floating_ip: FLIP1], service.allocateFloatingIp(FLIP1.pool, HOST, ZONE, true))
+        }
+    }
+
+    def testAllocateFloatingIpWithoutQuantumDNSService() {
+        service.openStackRESTService.post(NOVA, FLOATING_IPS, [pool: FLIP1.pool]).returns([floating_ip: FLIP1]).times(1)
+        service.quantumDNSService.isEnabled().returns(true).stub()
+
+        play {
+            assertEquals([floating_ip: FLIP1], service.allocateFloatingIp(FLIP1.pool))
         }
     }
 
     def testReleaseFloatingIpWithOutQuantumDNSService() {
-        service.openStackRESTService.delete(NOVA, "$FLOATING_IPS/$flip1.ip").returns(null).times(1)
+        service.openStackRESTService.delete(NOVA, "$FLOATING_IPS/$FLIP1.id").returns(null).times(1)
         service.quantumDNSService.isEnabled().returns(false).stub()
 
         play {
-            assertNull(service.releaseFloatingIp(flip1.ip))
+            assertNull(service.releaseFloatingIp(FLIP1.id))
         }
     }
 
     def testReleaseFloatingIpWithQuantumDNSService() {
-        service.openStackRESTService.delete(NOVA, "$FLOATING_IPS/$flip1.ip").returns(null).times(1)
+        service.openStackRESTService.delete(NOVA, "$FLOATING_IPS/$FLIP1.id").returns(null).times(1)
         service.quantumDNSService.isEnabled().returns(true).stub()
-        service.quantumDNSService.deleteDnsRecordByIP(flip1.ip, zone).returns().times(1)
-        service.sessionStorageService.getTenant().returns(zone: zone).times(1)
+        service.openStackRESTService.get(NOVA, "$FLOATING_IPS/$FLIP1.id").returns([floating_ip: FLIP1])
+        service.quantumDNSService.deleteDnsRecordByIP(FLIP1.ip).returns().times(1)
 
         play {
-            assertNull(service.releaseFloatingIp(flip1.ip))
+            assertNull(service.releaseFloatingIp(FLIP1.id))
         }
     }
 
     def testAssociateFloatingIp() {
-        service.openStackRESTService.post(NOVA, "servers/$flip1.instance_id/action", [addFloatingIp: [address: flip1.ip]]).returns([]).times(1)
+        service.openStackRESTService.post(NOVA, "servers/$FLIP1.instance_id/action", [addFloatingIp: [address: FLIP1.ip]]).returns([]).times(1)
         play {
-            assertEquals([], service.associateFloatingIp(flip1.instance_id, flip1.ip))
+            assertEquals([], service.associateFloatingIp(FLIP1.instance_id, FLIP1.ip))
         }
     }
 
     def testDisassociateFloatingIp() {
-        service.openStackRESTService.post(NOVA, "servers/$flip1.instance_id/action", [removeFloatingIp: [address: flip1.ip]]).returns([]).times(1)
+        service.openStackRESTService.post(NOVA, "servers/$FLIP1.instance_id/action", [removeFloatingIp: [address: FLIP1.ip]]).returns([]).times(1)
         play {
-            assertEquals([], service.disassociateFloatingIp(flip1.instance_id, flip1.ip))
+            assertEquals([], service.disassociateFloatingIp(FLIP1.instance_id, FLIP1.ip))
         }
     }
 

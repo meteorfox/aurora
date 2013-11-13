@@ -22,6 +22,7 @@ class OpenStackServiceController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [openStackServices: [], errors: error, flash: [message: error]]
             withFormat {

@@ -10,126 +10,123 @@ import javax.servlet.http.HttpServletResponse
 
 class LbaasController {
 
-    final static allowedMethods = [saveVip : ['GET', 'POST'], listPolicies: 'GET', listPools: ['GET', 'POST'], showPool: 'GET',listMethods: 'GET', listMonitors: 'GET', savePool: ['GET', 'POST'], updatePool: ['GET', 'POST'], delete: 'POST', saveService: 'POST', enableService: 'POST',disableService: 'POST',deleteService: ['GET', 'POST'], listJobs: ['GET', 'POST'], showJob: ['GET', 'POST'],listVips: ['GET', 'POST'], showVip: ['GET', 'POST'], createVip: ['GET', 'POST'],deleteVip: ['GET', 'POST'], savePolicy: ['GET', 'POST'], updatePolicy: ['GET', 'POST'], deletePolicy: ['POST'], addPool: 'GET', editPool: 'GET', addService: 'GET', getInstancesByPoolName: 'GET']
+    final static allowedMethods = [saveVip: ['GET', 'POST'], listPolicies: 'GET', listPools: ['GET', 'POST'], showPool: 'GET', listMethods: 'GET', listMonitors: 'GET', savePool: ['GET', 'POST'], updatePool: ['GET', 'POST'], delete: 'POST', saveService: 'POST', enableService: 'POST', disableService: 'POST', deleteService: ['GET', 'POST'], listJobs: ['GET', 'POST'], showJob: ['GET', 'POST'], listVips: ['GET', 'POST'], showVip: ['GET', 'POST'], createVip: ['GET', 'POST'], deleteVip: ['GET', 'POST'], savePolicy: ['GET', 'POST'], updatePolicy: ['GET', 'POST'], deletePolicy: ['POST'], addPool: 'GET', editPool: 'GET', addServices: ['POST', 'GET'], getInstancesByPoolName: 'GET']
 
     def lbaasService
     def instanceService
     def tenantService
-    def networkService
     def sessionStorageService
 
     def index = { redirect(action: 'listPools', params: params) }
 
     def listPools = {
         try {
-            List <Pool> listPools = lbaasService.allPools
+            List<Pool> listPools = lbaasService.allPools
             withFormat {
                 html { ['pools': listPools] }
-                xml { new XML([pools : listPools]).render(response) }
-                json { new JSON([pools : listPools]).render(response) }
+                xml { new XML([pools: listPools]).render(response) }
+                json { new JSON([pools: listPools]).render(response) }
             }
         } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html { ['pools' : [], flash: [message: error]]}
-                xml { new XML([errors : error]).render(response)}
-                json { new JSON([errors : error]).render(response)}
+                html { ['pools': [], flash: [message: error]] }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
-
     def listMethods = {
-        try{
-            List <String> listMethods = lbaasService.getMethods();
+        try {
+            List<String> listMethods = lbaasService.getMethods();
             withFormat {
-                xml { new XML([Methods : listMethods]).render(response) }
-                json { new JSON([Methods : listMethods]).render(response) }
+                xml { new XML([Methods: listMethods]).render(response) }
+                json { new JSON([Methods: listMethods]).render(response) }
             }
-        }catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                xml {new XML([errors : error]).render(response)}
-                json { new JSON([errors : error]).render(response)}
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
     def listMonitors = {
-        try{
-            List <String> listMonitors = lbaasService.getMonitors()
+        try {
+            List<String> listMonitors = lbaasService.getMonitors()
             withFormat {
-                xml { new XML([Monitors : listMonitors]).render(response) }
-                json { new JSON([Monitors : listMonitors]).render(response) }
+                xml { new XML([Monitors: listMonitors]).render(response) }
+                json { new JSON([Monitors: listMonitors]).render(response) }
             }
-        }catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                xml { new XML([errors : error]).render(response)}
-                json { new JSON([errors : error]).render(response)}
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
-
     def showPool = {
-        try{
+        try {
             Pool pool = lbaasService.getPool(params.id)
             List<LBService> services = lbaasService.getServices(params.id)
-            def model = [pool : pool, services: services]
+            def model = [pool: pool, services: services]
             withFormat {
                 html { [parent: "/lbaas/listPools", pool: pool, services: services] }
-                xml { new XML(model).render(response)}
-                json { new JSON(model).render(response)}
+                xml { new XML(model).render(response) }
+                json { new JSON(model).render(response) }
             }
-        }catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html { flash.message = error; redirect(action : 'listPools')}
-                xml { new XML([errors : error]).render(response) }
-                json { new JSON([errors : error]).render(response) }
+                html { flash.message = error; redirect(action: 'listPools') }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
     def listJobs = {
-        try{
+        try {
             List<Job> listJobs = lbaasService.getJobs()?.reverse()
             withFormat {
                 html { model: ['jobs': listJobs] }
-                xml { new XML([listJobs : listJobs]).render(response) }
-                json { new JSON([listJobs : listJobs]).render(response) }
+                xml { new XML([listJobs: listJobs]).render(response) }
+                json { new JSON([listJobs: listJobs]).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html { model :['jobs' : [], flash : [message : error]] }
-                xml { new XML([errors : error]).render(response) }
-                json { new JSON([errors : error]).render(response) }
+                html { model: ['jobs': [], flash: [message: error]] }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
     def _jobs = {
-        try{
+        try {
             List<Job> listJobs = lbaasService.getJobs()?.reverse()
             withFormat {
                 html { model: ['jobs': listJobs] }
-                xml { new XML([listJobs : listJobs]).render(response) }
-                json { new JSON([listJobs : listJobs]).render(response) }
+                xml { new XML([listJobs: listJobs]).render(response) }
+                json { new JSON([listJobs: listJobs]).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html { model :['jobs' : [], flash : [message : error]] }
-                xml { new XML([errors : error]).render(response) }
-                json { new JSON([errors : error]).render(response) }
+                html { model: ['jobs': [], flash: [message: error]] }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
@@ -137,31 +134,30 @@ class LbaasController {
     def showJob = {
         Job job = lbaasService.getJobById(params.id)
         withFormat {
-            html {[parent: '/lbaas/listJobs',job: job]}
-            xml {new XML([job: job]).render(response)}
-            json {new JSON([job: job]).render(response)}
+            html { [parent: '/lbaas/listJobs', job: job] }
+            xml { new XML([job: job]).render(response) }
+            json { new JSON([job: job]).render(response) }
         }
     }
 
     def listVips = {
-        try{
+        try {
             List<Vip> listVips = lbaasService.getVips()
             withFormat {
-                html { [vips : listVips] }
-                xml { new XML([vips : listVips]).render(response) }
-                json { new JSON([vips : listVips]).render(response) }
+                html { [vips: listVips] }
+                xml { new XML([vips: listVips]).render(response) }
+                json { new JSON([vips: listVips]).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html {[vips : [], flash: [message: error]]}
-                xml { new XML([errors : error]).render(response) }
-                json { new JSON([errors : error]).render(response) }
+                html { [vips: [], flash: [message: error]] }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
-
 
     def createVip = {
         params.allowedProtocols = allowedProtocols
@@ -179,15 +175,15 @@ class LbaasController {
         } else {
             try {
                 def resp = lbaasService.createVip(params)
-                def model = [resp : resp]
+                def model = [resp: resp]
                 withFormat {
-                    html { redirect(action: 'listVips') }
+                    html { redirect(action: 'listJobs') }
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
                 def errors = ExceptionUtils.getExceptionMessage(e)
-                response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                response.status = ExceptionUtils.getExceptionCode(e)
                 withFormat {
                     html { flash.message = errors; chain(action: 'createVip', params: params) }
                     xml { new XML([errors: errors]).render(response) }
@@ -201,16 +197,17 @@ class LbaasController {
     def showVip = {
         try {
             def vip = lbaasService.getVip(params.id)
-            def model = [vip : vip]
+            def model = [vip: vip]
             withFormat {
                 html { [parent: "/lbaas/listVips", vip: vip] }
                 xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def errors = ExceptionUtils.getExceptionMessage(e)
             withFormat {
-                html { flash.message = errors; redirect(action: 'listVips')}
+                html { flash.message = errors; redirect(action: 'listVips') }
                 xml { new XML([errors: errors]).render(response) }
                 json { new JSON([errors: errors]).render(response) }
             }
@@ -219,44 +216,36 @@ class LbaasController {
 
     def deleteVip = {
         List<String> vipNames = Requests.ensureList(params.selectedVips ?: params.id)
-        List<String> notRemovedVips = []
-        def deleted = []
-        def error = [:]
-        for (vipName in vipNames) {
-            try {
-                lbaasService.deleteVip(vipName)
-                deleted << vipName
-            } catch (RestClientRequestException e) {
-                log.error(e)
-                notRemovedVips << vipName
-                error[vipName] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def flashMessage = null
-        if (notRemovedVips) {
-            def names = notRemovedVips.join(',')
-            flashMessage = "Could not delete vips with name: ${names}"
-            response.status = 400
-        }
-        def view = [deleted: deleted, not_deleted_ids : notRemovedVips, errors : error]
+        def model = lbaasService.deleteVips(vipNames)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete vips with name: ",
+                model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { flash.message = flashMessage; redirect(action: 'listVips')}
-            xml { new XML(view).render(response) }
-            json { new JSON(view).render(response) }
+            html {
+                flash.message = flashMessage;
+                redirect(action: 'listJobs')
+            }
+            xml { new XML(model).render(response) }
+            json { new JSON(model).render(response) }
         }
     }
 
-    def addService = {
+    def addServices = {
         def pool = lbaasService.getPool(params.id)
-        def instances = instanceService.getAllActiveInstances()
+        List<Instance> instances = instanceService.getAllActiveInstances(true)
+        Set<String> interfaces = new HashSet<String>()
+        instances.each {
+            it.networks.each { interfaces << it.pool }
+            it.floatingIps.each { interfaces << it.pool }
+        }
         params.weight = 10
         [pool: pool, instances: instances, parent: "/lbaas/showPool/${params.id}",
                 constraints: ConstraintsProcessor.getConstraints(ServiceCreateCommand.class),
-                isUseQuantumFLIP: networkService.isUseExternalFLIP()]
+                interfaces: interfaces]
     }
 
-    def savePool = {PoolCreateCommand cmd ->
-        if (params.monitors && !cmd.monitors){
+    def savePool = { PoolCreateCommand cmd ->
+        if (params.monitors && !cmd.monitors) {
             cmd.monitors = params.monitors
             cmd.validate()
         }
@@ -269,25 +258,18 @@ class LbaasController {
         } else {
             try {
                 params.monitors = Requests.ensureList(params.monitors)
-                lbaasService.createPool(params)
-                def resp = lbaasService.addServices(Requests.ensureList(params.instances),
-                        (String)params.name,
-                        (String)null,
-                        (String)params.netInterface,
-                        (String)params.servicePort,
-                        (String)params.serviceWeight,
-                        (boolean)(params.serviceEnabled == 'on')
-                )
-                def model = [resp : resp]
+                def resp = lbaasService.createPool(params)
+                def model = [resp: resp]
                 withFormat {
-                    html { redirect(action: 'listPools') }
+                    html { redirect(action: 'listJobs') }
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
-                    html { flash.message = errors; chain(action: 'addPool', params: params)}
+                    html { flash.message = errors; chain(action: 'addPool', params: params) }
                     xml { new XML([errors: errors]).render(response) }
                     json { new JSON([errors: errors]).render(response) }
                 }
@@ -297,21 +279,14 @@ class LbaasController {
 
     def delete = {
         List<String> poolsNames = Requests.ensureList(params.selectedPools)
-        List<String> notRemovedPools = []
-        def deleted = []
-        def error = [:]
-        for (pool in poolsNames){
-            try{
-                lbaasService.deletePool(pool)
-                deleted << pool
-            }catch (RestClientRequestException e){
-                notRemovedPools << pool
-                error[pool] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def model = [deleted: deleted, not_deleted_ids : notRemovedPools, errors : error]
+        def model = lbaasService.deletePools(poolsNames)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete pools: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { redirect(action: 'listPools') }
+            html {
+                flash.message = flashMessage
+                redirect(action: 'listJobs')
+            }
             xml { new XML(model).render(response) }
             json { new JSON(model).render(response) }
         }
@@ -319,62 +294,77 @@ class LbaasController {
 
     def deleteService = {
         List<String> servicesNames = Requests.ensureList(params.selectedServices)
-        List<String> notRemovedServices = []
-        def deleted = []
-        def error = [:]
-        for (service in servicesNames){
-            try{
-                lbaasService.deleteService(params.pool, service)
-                deleted << service
-            } catch (RestClientRequestException e){
-                notRemovedServices << service
-                error[service] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def model = [deleted : deleted, not_deleted_ids : notRemovedServices, errors : error]
+        def model = lbaasService.deleteServices(servicesNames, params.pool)
+        String flashMessage = ResponseUtils.defineMessageByList("Could not delete services: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { redirect(action: 'showPool', params: [id: params.pool]) }
-            xml { new XML(model).render(response)}
+            html {
+                flash.message = flashMessage
+                redirect(action: 'listJobs')
+            }
+            xml { new XML(model).render(response) }
             json { new JSON(model).render(response) }
         }
     }
 
     def enableService = {
-        try{
+        try {
             List<String> servicesNames = Requests.ensureList(params.selectedServices)
             lbaasService.changeEnabled(params.pool, servicesNames, true)
             withFormat {
-                html { redirect(action: 'showPool', params: [id: params.pool]) }
+                html { redirect(action: 'listJobs', params: [id: params.pool]) }
                 xml { new XML([status: 'OK']).render(response) }
                 json { new JSON([status: 'OK']).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html { flash.message = error; redirect(action: 'showPool', params: [id: params.pool])}
-                xml {new XML([errors : error]).render(response)}
-                json {new JSON([errors : error]).render(response)}
+                html { flash.message = error; redirect(action: 'showPool', params: [id: params.pool]) }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
     def disableService = {
-        try{
+        try {
             List<String> servicesNames = Requests.ensureList(params.selectedServices)
             lbaasService.changeEnabled(params.pool, servicesNames, false)
             withFormat {
-                html { redirect(action: 'showPool', params: [id: params.pool]) }
-                xml {new XML([status : 'OK']).render(response)}
+                html { redirect(action: 'listJobs', params: [id: params.pool]) }
+                xml { new XML([status: 'OK']).render(response) }
                 json { new JSON([status: 'OK']).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
-            def model = [errors : error]
+            def model = [errors: error]
             withFormat {
-                html { flash.message = error; redirect(action: 'showPool', params: [id: params.pool])}
-                xml {new XML(model).render(response)}
+                html { flash.message = error; redirect(action: 'showPool', params: [id: params.pool]) }
+                xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
+            }
+        }
+    }
+
+    def saveServiceValidation = { ServiceCreateCommand cmd ->
+        if (cmd.hasErrors()){
+            withFormat {
+                html { chain(action: "addServices", model: [cmd: cmd], params: params) }
+                xml { new XML([errors: cmd.errors]).render(response) }
+                json { new JSON([errors: cmd.errors]).render(response) }
+            }
+        }else{
+            List <String> instances = Requests.ensureList(params.instanceId.split(', '))
+            boolean sameGroup = ValidatorUtils.sameGroup(instances, instanceService)
+            if (!sameGroup){
+                response.status = HttpServletResponse.SC_BAD_REQUEST
+            }
+            Map model = [params : params, sameGroup : sameGroup]
+            withFormat{
+                xml {new XML(model).render(response)}
+                json {new JSON(model).render(response)}
             }
         }
     }
@@ -382,12 +372,12 @@ class LbaasController {
     def saveService = { ServiceCreateCommand cmd ->
         if (cmd.hasErrors()) {
             withFormat {
-                html { chain(action: "addService", model: [cmd: cmd], params: params) }
+                html { chain(action: "addServices", model: [cmd: cmd], params: params) }
                 xml { new XML([errors: cmd.errors]).render(response) }
                 json { new JSON([errors: cmd.errors]).render(response) }
             }
         } else {
-            try{
+            try {
                 lbaasService.addServices(Requests.ensureList(params.instanceId),
                         params.id,
                         params.name,
@@ -397,17 +387,18 @@ class LbaasController {
                         params.enabled == 'on'
                 )
                 withFormat {
-                    html { redirect(action: 'showPool', params: [id: params.id]) }
-                    xml {new XML([status : 'OK']).render(response)}
+                    html { redirect(action: 'listJobs', params: [id: params.id]) }
+                    xml { new XML([status: 'OK']).render(response) }
                     json { new JSON([status: 'OK']).render(response) }
                 }
-            } catch (RestClientRequestException e){
+            } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
-                def model = [errors : error]
+                def model = [errors: error]
                 withFormat {
-                    html { flash.message = error; redirect(action: 'showPool', params: [id: params.id])}
-                    xml {new XML(model).render(response)}
-                    json {new JSON(model).render(response)}
+                    html { flash.message = error; redirect(action: 'showPool', params: [id: params.id]) }
+                    xml { new XML(model).render(response) }
+                    json { new JSON(model).render(response) }
                 }
             }
         }
@@ -416,16 +407,14 @@ class LbaasController {
     def addPool = {
         [methods: getMethods(),
                 monitors: getMonitors(),
-                instances: instanceService.getAllActiveInstances(),
                 parent: "/lbaas",
-                constraints: ConstraintsProcessor.getConstraints(PoolCreateCommand.class),
-                isUseQuantumFLIP: networkService.isUseExternalFLIP()]
+                constraints: ConstraintsProcessor.getConstraints(PoolCreateCommand.class)]
     }
 
     def editPool = {
-        try{
+        try {
             Pool pool = lbaasService.getPool(params.id)
-            def model = [name: params.name != null ? params.name: pool.name,
+            def model = [name: params.name != null ? params.name : pool.name,
                     enabled: params.enabled ?: pool.enabled,
                     lbMethod: params.lbMethod ?: pool.method,
                     monitors: params.monitors ?: pool.monitors,
@@ -433,25 +422,25 @@ class LbaasController {
                     allMonitors: getMonitors(),
                     parent: "/lbaas/showPool/$params.id",
                     id: params.id,
-                    ]
+            ]
             withFormat {
                 html { [parent: "/lbaas/showPool/$params.id", params: model, constraints: ConstraintsProcessor.getConstraints(PoolCreateCommand.class)] }
-                xml { new XML(model).render(response)}
-                json { new JSON(model).render(response)}
+                xml { new XML(model).render(response) }
+                json { new JSON(model).render(response) }
             }
-        }catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
-                html { flash.message = error; redirect(action : 'showPool', params: [id: params.id])}
-                xml { new XML([errors : error]).render(response) }
-                json { new JSON([errors : error]).render(response) }
+                html { flash.message = error; redirect(action: 'showPool', params: [id: params.id]) }
+                xml { new XML([errors: error]).render(response) }
+                json { new JSON([errors: error]).render(response) }
             }
         }
     }
 
     def updatePool = { PoolCreateCommand cmd ->
-        if (params.monitors && !cmd.monitors){
+        if (params.monitors && !cmd.monitors) {
             cmd.monitors = params.monitors
             cmd.validate()
         }
@@ -466,14 +455,15 @@ class LbaasController {
                 params.monitors = Requests.ensureList(params.monitors)
                 def model = lbaasService.updatePool(params)
                 withFormat {
-                    html { chain(action: 'showPool', params: [id: params.name])}
+                    html { chain(action: 'listJobs', params: [id: params.name]) }
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
-                    html { flash.message = errors; chain(action: 'editPool', params: params)}
+                    html { flash.message = errors; chain(action: 'editPool', params: params) }
                     xml { new XML([errors: errors]).render(response) }
                     json { new JSON([errors: errors]).render(response) }
                 }
@@ -482,15 +472,15 @@ class LbaasController {
     }
 
     def getMonitors() {
-        sessionStorageService.customServices[0].find{it.type == 'lbms'}?.monitors?:lbaasService.monitors
+        sessionStorageService.services['lbms']?.monitors ?: lbaasService.monitors
     }
 
     def getMethods() {
-        sessionStorageService.customServices[0].find{it.type == 'lbms'}?.methods?:lbaasService.methods
+        sessionStorageService.services['lbms']?.methods ?: lbaasService.methods
     }
 
     def getAllowedProtocols() {
-        sessionStorageService.customServices[0].find{it.type == 'lbms'}?.allowedProtocols?:[]
+        sessionStorageService.services['lbms']?.allowedProtocols ?: []
     }
 
     def listPolicies = {
@@ -499,25 +489,26 @@ class LbaasController {
             def tenant = tenantService.getTenantByName(params.tenantName)
             List<Policy> policies
             try {
-               policies = lbaasService.getPolicies(params.tenantName)
+                policies = lbaasService.getPolicies(params.tenantName)
             } catch (RestClientRequestException e) {
                 error = ExceptionUtils.getExceptionMessage(e)
-                response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                response.status = ExceptionUtils.getExceptionCode(e)
             }
             def map = [parent: "/tenant/show/${tenant.id}", policies: policies, tenantName: params.tenantName]
             withFormat {
                 html { flash.message = error; map }
-                xml { new XML([policies: policies, errors : error]).render(response) }
-                json { new JSON([policies: policies, errors : error]).render(response) }
+                xml { new XML([policies: policies, errors: error]).render(response) }
+                json { new JSON([policies: policies, errors: error]).render(response) }
             }
         } else {
             List<Policy> policies
-            try{
+            try {
                 policies = lbaasService.getPolicies()
-            } catch (RestClientRequestException e){
+            } catch (RestClientRequestException e) {
                 error = ExceptionUtils.getExceptionMessage(e)
+                response.status = ExceptionUtils.getExceptionCode(e)
             }
-            def map = [policies: policies, errors : error,  flash: [message: error]]
+            def map = [policies: policies, errors: error, flash: [message: error]]
             withFormat {
                 html { map }
                 xml { new XML(map).render(response) }
@@ -537,24 +528,16 @@ class LbaasController {
 
     def deletePolicy = {
         List<String> policyNames = Requests.ensureList(params.selectedPolicies ?: params.id)
-        List<String> notRemovedPolicyNames = []
-        def deleted = []
-        def error = [:]
-        for (name in policyNames) {
-            try{
-                lbaasService.deletePolicy(name, params.tenantName)
-                deleted << name
-            } catch (RestClientRequestException e) {
-                response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-                notRemovedPolicyNames << name
-                error[name] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def view = [deleted : deleted, not_deleted_ids: notRemovedPolicyNames, error : error]
+        def model = lbaasService.deletePolicies(policyNames)
+        String flashMessage = ResponseUtils.defineMessageByList("Could not delete policies: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { defineRedirectParams(params) }
-            xml { new XML(view).render(response) }
-            json { new JSON(view).render(response) }
+            html {
+                flash.message = flashMessage
+                redirect(action: 'listJobs')
+            }
+            xml { new XML(model).render(response) }
+            json { new JSON(model).render(response) }
         }
     }
 
@@ -577,16 +560,17 @@ class LbaasController {
         } else {
             try {
                 def resp = lbaasService.updatePolicy(params, params.tenantName)
-                def model = [resp : resp]
+                def model = [resp: resp]
                 withFormat {
-                    html { defineRedirectParams(params) }
+                    html { redirect(action: 'listJobs') }
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
-                    html { flash.message = errors; chain(action: 'editPolicy', params: params)}
+                    html { flash.message = errors; chain(action: 'editPolicy', params: params) }
                     xml { new XML([errors: errors]).render(response) }
                     json { new JSON([errors: errors]).render(response) }
                 }
@@ -604,16 +588,17 @@ class LbaasController {
         } else {
             try {
                 def resp = lbaasService.createPolicy(params, params.tenantName)
-                def model = [resp : resp]
+                def model = [resp: resp]
                 withFormat {
-                    html { defineRedirectParams(params) }
+                    html { redirect(action: 'listJobs') }
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
-                    html { flash.message = errors; chain(action: 'createPolicy', params: params)}
+                    html { flash.message = errors; chain(action: 'createPolicy', params: params) }
                     xml { new XML([errors: errors]).render(response) }
                     json { new JSON([errors: errors]).render(response) }
                 }
@@ -646,7 +631,6 @@ class PoolCreateCommand {
 
 class ServiceCreateCommand {
 
-    String name
     String instanceId
     String netInterface
     String port
@@ -654,11 +638,6 @@ class ServiceCreateCommand {
     String enabled
 
     static constraints = {
-        name(nullable: false, blank: false, validator: {name, obj ->
-            if (!name.endsWith(":" + obj.port)) {
-                return "serviceCreateCommand.name.validator.error"
-            }
-        })
         instanceId(nullable: false, blank: false)
         netInterface(nullable: false, blank: false)
         port(nullable: false, blank: false, matches: /\d+/)
@@ -678,10 +657,11 @@ class VipValidationCommand {
     static constraints = {
         ip(nullable: false, blank: false, matches: /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)
         name(nullable: false, blank: false)
-        port(nullable: false, blank: false, validator: {port, obj ->
+        port(nullable: false, blank: false, validator: { port, obj ->
             return ValidatorUtils.checkInteger(port)
         })
         enabled(nullable: true, blank: true, matches: /on/)
+        protocol(nullable: false, blank: false)
     }
 }
 

@@ -10,21 +10,34 @@ class TestFloatingIp(UIBaseTest):
         self.uidriver.click_menu(self.uimap.menu_networking, self.uimap.menu_floating_ip)
 
     def test_01_allocate_new_ip(self):
+        if not self.uidriver.is_element_present(*self.uimap.counter):
+            cnt_flt = 0
+        else:
+            cnt_flt = int(self.uidriver.find_element(*self.uimap.counter).text)
         self.uidriver.click(*self.uimap.bt_allocate)
         pool = self.uidriver.get_cb_options(self.uimap.cb_select_pool)
         ok_(len(pool) > 0, "Error: List of Pools is empty!")
         self.uidriver.select_cb_option(self.uimap.cb_select_pool, pool[0])
-        name = self.utils.generate_name(4)
-        self.uidriver.enter_text(self.uimap.ed_hostname, name)
+        if not self.uidriver.find_element(*self.uimap.chk_enabled).is_selected():
+            self.uidriver.find_element(*self.uimap.chk_enabled).click()
         zone = self.uidriver.get_cb_options(self.uimap.cb_select_zone)
-        ok_(len(zone) > 0, "Error: List of Zones is empty!")
-        self.uidriver.select_cb_option(self.uimap.cb_select_zone, zone[0])
+        #ok_(len(zone) > 0, "Error: List of Zones is empty!")
+        if not len(zone):
+            self.uidriver.find_element(*self.uimap.chk_enabled).click()
+        else:
+            self.uidriver.select_cb_option(self.uimap.cb_select_zone, zone[0])
+            name = self.utils.generate_name(4)
+            self.uidriver.enter_text(self.uimap.ed_hostname, name)
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
-        m = self.uidriver.find_row(self.uimap.tbl_floating_ip, lambda r: r["IP"] == name)
-        ok_(m, "Floating IP: %s not in list" % name)
 
-        self.floating_ip.append(name)
+        ok_(int(self.uidriver.find_element(*self.uimap.counter).text)==cnt_flt+1, "New floating IP not allocated")
+
+        #m = self.uidriver.find_row(self.uimap.tbl_floating_ip, lambda r: r["IP"] == name)
+        #ok_(m, "Floating IP: %s not in list" % name)
+
+        new_ip = "10.0.1.%d" % (cnt_flt+1)
+        self.floating_ip.append(new_ip)
 
     def test_02_list_floating_ip(self):
         ok_(len(self.floating_ip) > 0, "Floating IP creation failed so cannot filter the list.")

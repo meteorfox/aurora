@@ -1,77 +1,80 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="settings"/> 
+    <meta name="menu-level-2" content="users"/> 
+    <meta name="menu-level-3" content="Edit User"/>     
     <title>Edit user '${user.name}'</title>
-</head>
+  </head>
 
-<body>
-<div class="body">
-    <h1>Edit user '${user.name}'</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:hasErrors bean="${cmd}">
-        <div id="error_message" class="error">
-            <g:renderErrors bean="${cmd}" as="list"/>
+  <body>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="alert alert-info">${flash.message}</div>
+            </g:if>    
+            <g:hasErrors bean="${cmd}">
+              <div id="error_message" class="alert alert-error">
+                <g:renderErrors bean="${cmd}" as="list"/>
+              </div>
+            </g:hasErrors>
+          </div>
         </div>
-    </g:hasErrors>
-    <g:form method="post">
-        <input type="hidden" name="id" value="${user.id}"/>
-        <div class="dialog">
-            <table id="table_OSUserEdit">
-                <tbody>
-                <tr>
-                    <td class="name">
-                        <label for="name">Name:</label>
-                    </td>
-                    <td class="value">
-                        <g:textField id="name" name="name" value="${user.name}"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="email">
-                        <label for="email">Email:</label>
-                    </td>
-                    <td class="value">
-                        <g:textField id="email" name="email" value="${user.email}" autocomplete="off"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="name">
-                        <label for="password">Password:</label>
-                    </td>
-                    <td>
-                        <input type="password" id="password" name="password" autocomplete="off"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="name">
-                        <label for="confirm_password">Confirm Password:</label>
-                    </td>
-                    <td>
-                        <input type="password" id="confirm_password" name="confirm_password"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="name">
-                        <label>Default Tenant:</label>
-                    </td>
-                    <td>
-                        <select id="tenant_id" name="tenant_id">
-                            ${contain ? "" : '<option value="null" selected="true">Choose tenant</option>'}
-                            <g:each var="tenant" in="${tenants}" status="i">
-                                <option value="${tenant.id}" ${tenant.id == user.tenantId ? 'selected="true"' : ""}>${tenant.name}</option>
-                            </g:each>
-                        </select>
-                    </td>
-                </tr>
-            </table>
+        <div class="box">
+          <div class="box-header">
+            <span class="title">Edit User '${user.name}'</span>
+          </div>
+          <div class="box-content">   
+            <g:form method="post" class="form-horizontal fill-up">
+              <input type="hidden" name="id" value="${user.id}"/>
+              <div class="padded">
+                <div class="form-group">
+                  <label class="control-label col-lg-2 required">Name *</label>
+                  <div class="col-lg-4">
+                    <g:textField id="name" name="name" value="${user.name}"/>
+                  </div>
+                </div>   
+                <div class="form-group">
+                  <label class="control-label col-lg-2 required">Email *</label>
+                  <div class="col-lg-4">
+                    <g:textField id="email" name="email" value="${user.email}" autocomplete="off"/>
+                  </div>
+                </div>  
+                <div class="form-group">
+                  <label class="control-label col-lg-2 required">Password *</label>
+                  <div class="col-lg-4">
+                    <input type="password" id="password" name="password" autocomplete="off"/>
+                  </div>
+                </div>   
+                <div class="form-group">
+                  <label class="control-label col-lg-2 required">Confirm Password *</label>
+                  <div class="col-lg-4">
+                    <input type="password" id="confirm_password" name="confirm_password"/>
+                  </div>
+                </div> 
+                <div class="form-group">
+                  <label class="control-label col-lg-2">Default Project</label>
+                  <div class="col-lg-4">
+                    <select id="tenant_id" name="tenant_id">${contain ? "" : '<option value="null" selected="true">Choose Project</option>'}
+                      <g:each var="tenant" in="${tenants}" status="i">
+                        <option value="${tenant.id}" ${tenant.id == user.tenantId ? 'selected="true"' : ""}>${tenant.name}</option>
+                      </g:each>
+                    </select>
+                  </div>
+                </div> 
+                <div class="form-actions">
+                  <g:buttonSubmit class="save btn btn-green" id="submit" 
+                                  value="Update User" action="update" title="Save changes"/>
+                </div>          
+              </div>
+
+            </g:form>
+          </div>
         </div>
-        <div class="buttons">
-            <g:buttonSubmit class="save" id="submit" value="Update User" action="update" title="Save changes"/>
-        </div>
-    </g:form>
-</div>
-</body>
+      </div>
+    </div>
+  </body>
 </html>

@@ -1,50 +1,67 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="settings"/> 
+    <meta name="menu-level-2" content="users"/>  
     <title>Users</title>
-</head>
+  </head>
 
-<body>
-<div class="body">
-    <h1>Users</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:form method="post">
-        <div class="list">
-            <div class="buttons">
-                <g:link elementId="create" class="create" action="create" title="Create new user">Create User</g:link>
-                <g:if test="${openStackUsers}">
-                    <g:buttonSubmit class="delete" id="delete" value="Delete user(s)" action="delete"
-                                    data-warning="Really delete user(s)?" title="Delete selected user(s)"/>
-                </g:if>
+  <body>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="message alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
+        </div>
+
+        <g:form method="post">
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Users</span>
+              <ul class="box-toolbar">
+                <li><g:link elementId="create" class="btn btn-green btn-xs" action="create" 
+                            title="Create New User">Create User</g:link></li>
+                <li><g:if test="${openStackUsers}">
+                  <g:buttonSubmit class="delete btn btn-red btn-xs" id="delete" action="delete"
+                                  data-warning="Really delete user(s)?" title="Delete selected user(s)">
+                    Delete User(s)
+                  </g:buttonSubmit>
+                </g:if></li>
+              </ul>
             </div>
-            <table id="table_OSUserList" class="sortable">
+            <div class="box-content list">
+              <table id="table_OSUserList" class="sortable table table-normal filtered">
                 <thead>
-                <tr>
-                    <th class="checkboxTd">&thinsp;x</th>
-                    <th>User Name</th>
-                    <th>User Email</th>
-                    <th>Enabled</th>
-                </tr>
+                  <tr>
+                    <td class="checkboxTd">&thinsp;x</td>
+                    <td>User Name</td>
+                    <td>User Email</td>
+                    <td>Enabled</td>
+                  </tr>
                 </thead>
                 <tbody>
                 <g:each var="openStackUser" in="${openStackUsers}" status="i">
-                    <tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
-                        <td><g:checkBox id="checkBox_${openStackUser.id}" name="selectedUsers" value="${openStackUser.id}" checked="0"/></td>
-                        <td><g:linkObject displayName="${openStackUser.name}" elementId="openStackUser-${openStackUser.id}" type="openStackUser" id="${openStackUser.id}"/></td>
-                        <td>${openStackUser.email}</td>
-                        <td>${openStackUser.enabled ? 'enabled' : 'disabled'}</td>
-                    </tr>
+                  <tr>
+                    <td><g:checkBox id="checkBox_${openStackUser.id}" name="selectedUsers" value="${openStackUser.id}" checked="0"/></td>
+                  <td><g:linkObject displayName="${openStackUser.name}" elementId="openStackUser-${openStackUser.id}" type="openStackUser" id="${openStackUser.id}"/></td>
+                  <td>${openStackUser.email}</td>
+                  <td>${openStackUser.enabled ? 'enabled' : 'disabled'}</td>
+                  </tr>
                 </g:each>
                 </tbody>
-            </table>
-        </div>
-
-        <div class="paginateButtons">
-        </div>
-    </g:form>
-</div>
-</body>
+              </table>
+            </div>
+            <div class="box-footer">
+            <div class="paginateButtons">
+            </div>
+            </div>
+          </div>
+        </g:form>
+      </div>
+    </div>
+  </body>
 </html>

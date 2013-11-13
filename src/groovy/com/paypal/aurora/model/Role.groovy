@@ -11,16 +11,10 @@ class Role {
     }
 
     Role(def role) {
-        def firstRole
-
-        if (role instanceof List) {
-            firstRole = role == [] ? null: role[0]
-        } else {
-            firstRole = role
+        if(role && role.id && role.name) {
+            name = role.name
+            id = role.id
         }
-
-        name = firstRole?.name
-        id = firstRole?.id
     }
 
     @Override

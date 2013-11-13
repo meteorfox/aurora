@@ -52,6 +52,10 @@ class SecurityGroupService {
         openStackRESTService.delete(openStackRESTService.NOVA, "${OS_SECURITY_GROUP_RULES}/${id}")
     }
 
+    def deleteSecurityGroupRulesById(List <String> groupIds){
+        return ServiceUtils.removeItems(this, "deleteSecurityGroupRuleById", groupIds)
+    }
+
     def deleteSecurityGroupById(def id) {
         openStackRESTService.delete(openStackRESTService.NOVA, "${OS_SECURITY_GROUPS}/${id}")
     }

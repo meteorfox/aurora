@@ -54,7 +54,8 @@ class VolumeHelper(BaseRESTHelper):
         res = self.utils.send_request('POST', 'delete_volume', data=params)
         # volume cannot be deleted if it is attached or has a snapshot.
         res = json.loads(res.content)
-        if len(res['not_deleted_ids']) > 0:
+        #if len(res['not_deleted_ids']) > 0:
+        if len(res['notRemovedItems']) > 0:
             return False
 
         if type(vid) != list:
@@ -181,5 +182,6 @@ class VolumeSnapshotHelper(BaseRESTHelper):
     def delete_snapshot(self, sid):
         params = {'id': sid}
         res = self.utils.send_request('POST', 'delete_snapshot', data=params)
-        condition = lambda: len([s for s in self.utils.get_list('snapshots') if s['id'] == sid]) == 0
+        condition = lambda: len([s for s in self.utils.get_list('snapshots') if len(self.utils.get_list('snapshots')) > 0 and s['id'] == sid]) == 0
+        #condition = lambda: len([s for s in self.utils.get_list('snapshots') if s['id'] == sid]) == 0
         return self.utils.waitfor(condition, 30, 2)

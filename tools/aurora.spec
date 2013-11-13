@@ -38,13 +38,13 @@ mkdir -p %{buildroot}%{prefix}/aurora/target
 
 
 cp -r %{_sourcedir}/target/standalone* %{buildroot}%{prefix}/aurora/target/
-cp -r %{_sourcedir}/tools/aurora.init %{buildroot}/etc/init.d/
+cp -r %{_sourcedir}/tools/aurora %{buildroot}/etc/init.d/
 
-chmod +x %{buildroot}/etc/init.d/aurora.init
+chmod +x %{buildroot}/etc/init.d/aurora
 
-#cp -f %{_sourcedir}/tools/Config.json   %{buildroot}/root/
+#cp -f %{_sourcedir}/Config.json   %{buildroot}/root/
 
-cp -f %{_sourcedir}/tools/Config.json   %{buildroot}/etc/aurora/
+cp -f %{_sourcedir}/Config.json   %{buildroot}/etc/aurora/
 cp -r %{_sourcedir}/tools/aurora.sh     %{buildroot}/etc/aurora/
 
 # clean step, remove builded virtualenv andt etc
@@ -75,5 +75,5 @@ chown aurora:root /opt/aurora -R
 if [ "$1" == "0" ]; then
 # this is uninstall, not upgrade
 # stopping services
-    /etc/init.d/aurora.init stop || :
+    /etc/init.d/aurora stop || :
 fi

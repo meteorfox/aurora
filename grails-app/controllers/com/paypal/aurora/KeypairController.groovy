@@ -28,7 +28,7 @@ class KeypairController {
         } catch (RestClientRequestException e){
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [keypairs: keypairs, errors : error]
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
                 html { model }
                 xml { new XML(model).render(response) }
@@ -39,20 +39,14 @@ class KeypairController {
 
     def delete = {
         List<String> keypairNames = Requests.ensureList(params.selectedKeypairs ?: params.keypairName)
-        def resp = []
-        def not_deleted = []
-        def error = [:]
-        for (name in keypairNames) {
-            try{
-                resp << keypairService.delete(name)
-            } catch(RestClientRequestException e){
-                not_deleted << name
-                error[name] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def model = [resp : resp, not_deleted : not_deleted, errors : error]
+        def model = keypairService.deleteKeypairs(keypairNames)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete keypairs: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { redirect(action: 'list') }
+            html {
+                flash.message = flashMessage
+                redirect(action: 'list')
+            }
             xml { new XML(model).render(response) }
             json { new JSON(model).render(response) }
         }
@@ -83,7 +77,8 @@ class KeypairController {
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
-            } catch (RestClientRequestException e){
+            } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -118,7 +113,8 @@ class KeypairController {
                     xml { new XML(model).render(response) }
                     json { new JSON(model).render(response) }
                 }
-            } catch (RestClientRequestException e){
+            } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -161,6 +157,6 @@ class KeypairInsertCommand {
                 return "keypairInsertCommand.name.exists"
             }
         })
-        publicKey(nullable: false, blank: false, matches: /ssh-rsa AAAA[0-9A-Za-z+\/]+[=]{0,3} ([^@]+@[^@]+)/)
+        publicKey(nullable: false, blank: false, matches: /ssh-rsa AAAA[0-9A-Za-z+\/]+[=]{0,3}(.)*/)
     }
 }

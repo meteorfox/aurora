@@ -1,62 +1,74 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
-    <title>IP '${floatingIp.ip}'</title>
+    <meta name="layout" content="mainWithNav"/>    
+    <meta name="menu-level-1" content="networking"/>
+    <meta name="menu-level-2" content="floatingips"/>    
+    <meta name="menu-level-3" content="Floating IP Detail"/> 
+    <title>Floating IP Detail</title>
 </head>
 
 <body>
 <div class="body">
-    <h1>IP '${floatingIp.ip}'</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="message alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
+        </div>
     <g:form method="post">
         <input type="hidden" id="ip" name="ip" value="${floatingIp.ip}">
         <input type="hidden" id="id" name="id" value="${floatingIp.id}">
-
-        <div class="buttons">
-            <g:if test="${floatingIp.instanceId}">
-                <input type="hidden" id="instanceId" name="instanceId" value="${floatingIp.instanceId}">
-                <g:buttonSubmit id='disassociate' class="floatingIP" action="disassociateIp"
-                                value="Disassociate floating IP" title="Disassociate this floating IP address"/>
+      <div class="box">
+          <div class="box-header">
+            <span class="title">Floating IP ${floatingIp.ip}</span>
+            <ul class="box-toolbar">
+              <g:if test="${floatingIp.instanceId}">
+                <li><input type="hidden" id="instanceId" name="instanceId" value="${floatingIp.instanceId}"/>
+                <g:buttonSubmit id='disassociate' class="btn btn-xs btn-red" action="disassociateIp"
+                                value="Disassociate floating IP" title="Disassociate this floating IP address"/></li>
             </g:if>
             <g:else>
-                <g:link class="associate" elementId="associate" action="associateFloatingIp" params="[ip:floatingIp.ip]" title="Associate this floating IP address">Associate floating IP</g:link>
+                <li><g:link class="btn btn-xs btn-green" elementId="associate" 
+                            action="associateFloatingIp" params="[ip:floatingIp.ip]" 
+                            title="Associate this floating IP address">Associate floating IP</g:link></li>
+                
             </g:else>
-        </div>
-        <div class="dialog">
-            <table id="FloatingIpShow">
+            </ul>
+          </div>
+        <div class="box-content">
+            <table id="FloatingIpShow" class="table table-normal">
                 <tbody>
-                <tr class="prop">
-                    <td class="name">ID:</td>
-                    <td class="value">${floatingIp.id}</td>
+                <tr>
+                    <td>ID</td>
+                    <td>${floatingIp.id}</td>
                 </tr>
-                <tr class="prop">
-                    <td class="name">Floating IP:</td>
-                    <td class="value">${floatingIp.ip}</td>
+                <tr>
+                    <td>Floating IP</td>
+                    <td>${floatingIp.ip}</td>
                 </tr>
-                <tr class="prop">
-                    <td class="name">Pool:</td>
-                    <td class="value">${floatingIp.pool}</td>
+                <tr>
+                    <td>Pool</td>
+                    <td>${floatingIp.pool}</td>
                 </tr>
                 <g:if test="${floatingIp.instanceId}">
-                    <tr class="prop">
-                        <td class="email">Instance:</td>
-                        <td class="value"><g:linkObject type="instance" id="${floatingIp.instanceId}"
+                    <tr>
+                        <td class="email">Instance</td>
+                        <td><g:linkObject type="instance" id="${floatingIp.instanceId}"
                                                         displayName="${instances.find { it.instanceId == floatingIp.instanceId }.name}"/></td>
                     </tr>
-                    <tr class="prop">
-                        <td class="email">Fixed IP:</td>
-                        <td class="value">${floatingIp.fixedIp}</td>
+                    <tr>
+                        <td class="email">Fixed IP</td>
+                        <td>${floatingIp.fixedIp}</td>
                     </tr>
                 </g:if>
             </table>
         </div>
-        <div class="buttons">
-        </div>
+      </div>
     </g:form>
+      </div>
 </div>
 </body>
 </html>

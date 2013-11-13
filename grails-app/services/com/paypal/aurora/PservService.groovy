@@ -21,12 +21,12 @@ class PservService {
                 application: ["type": "AURORA", "subType": "LB Management"],
                 title: action,
                 description: description,
-                environment: sessionStorageService.getCurrentEnv().'name',
-                dataCenterName: sessionStorageService.getDataCenterName().toString(),
+                environment: sessionStorageService.getEnvironmentName(),
+                dataCenterName: sessionStorageService.getDataCenterName(),
                 assignee: "auroramanager",
                 status: "IN_PROGRESS",
-                requester: ["login": sessionStorageService.user],
-                submitter: sessionStorageService.user
+                requester: ["login": sessionStorageService.getUserName()],
+                submitter: sessionStorageService.getUserName()
         ]
         logger.info("LOG:\n " + body.description + " on environment '" + body.environment + "'. Requester '" + body.requester.login + "', submitter '" + body.submitter + "'. Status '" + body.status + "'")
         openStackRESTService.post(PSERV, TICKETS, body, null, null, [header : 'application/json', body: 'text/plain']).str.toString()

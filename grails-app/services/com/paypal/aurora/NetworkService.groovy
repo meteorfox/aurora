@@ -20,12 +20,14 @@ class NetworkService {
     def getFloatingIps() {
         List<FloatingIp> floatingIps = []
         def resp = openStackRESTService.get(openStackRESTService.NOVA, FLOATING_IPS)
-        resp.floating_ips.each{
-            FloatingIp ip = new FloatingIp(it)
-            if (quantumDNSService.isEnabled()) {
-                ip.fqdn = quantumDNSService.getFqdnByIp(ip.ip)
+        if (resp != null) {
+            resp.floating_ips.each{
+                FloatingIp ip = new FloatingIp(it)
+                if (quantumDNSService.isEnabled()) {
+                    ip.fqdn = quantumDNSService.getFqdnByIp(ip.ip)
+                }
+                floatingIps << ip
             }
-            floatingIps << ip
         }
         return floatingIps
     }
@@ -78,18 +80,19 @@ class NetworkService {
         get.floating_ip_pools
     }
 
-    def allocateFloatingIp(def pool, String hostname=null, String zone=null){
+    def allocateFloatingIp(def pool, String hostname=null, String zone=null, boolean FQDNenabled=false){
         def resp = openStackRESTService.post(openStackRESTService.NOVA, FLOATING_IPS, [pool: pool])
-        if (quantumDNSService.isEnabled()) {
+        if (quantumDNSService.isEnabled() && FQDNenabled) {
             quantumDNSService.addDnsRecord(hostname, resp.floating_ip.ip, zone)
         }
         return resp
     }
 
-    def releaseFloatingIp(def ip){
-        openStackRESTService.delete(openStackRESTService.NOVA, FLOATING_IPS+"/${ip}")
+    def releaseFloatingIp(def ipId, def enabled=false){
+        openStackRESTService.delete(openStackRESTService.NOVA, FLOATING_IPS+"/${ipId}")
         if (quantumDNSService.isEnabled()) {
-            quantumDNSService.deleteDnsRecordByIP(ip, sessionStorageService.tenant.zone)
+            String ip = getFloatingIpById(ipId).ip
+            quantumDNSService.deleteDnsRecordByIP(ip)
         }
     }
 

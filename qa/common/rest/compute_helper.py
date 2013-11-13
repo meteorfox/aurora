@@ -1,3 +1,5 @@
+__author__ = 'yyekovenko'
+
 from base_rest_helper import *
 
 
@@ -12,9 +14,9 @@ class InstanceHelper(BaseRESTHelper):
         super(InstanceHelper, self).__init__(utils)
         self.auth = auth
 
-    def create_instance(self, parameters=None):
+    def create_instance(self, parameters=None, attempts=4):
         """
-        Create instance via Aurora REST API.
+        Create instance via Asgard REST API.
 
         Arguments:
           - parameters: dict, parameters of instance (see Wiki for details).
@@ -83,9 +85,9 @@ class InstanceHelper(BaseRESTHelper):
 
         if params['flavor'] == "":
             flavors = self.utils.get_list('flavors')
-            mindisk = min(i['disk'] for i in flavors)
+            mindisk = min([int(i['disk']) for i in flavors if int(i['disk']) > 0])
             for f in flavors:
-                if f['disk'] == mindisk:
+                if int(f['disk']) == mindisk:
                     params['flavor'] = f['id']
                     break
 
@@ -96,12 +98,12 @@ class InstanceHelper(BaseRESTHelper):
 
         # launch instance creation and verify result.
         # multiple attempts to create instance - to avoid false-negative test results.
-        for attempt in range(1, 4):
+        for attempt in range(attempts):
             print("\n=== Instance creation. Attempt # %s. ===\n" % attempt)
             # try to create instance. wait for result.
             self.utils.send_request("POST", 'create_instance', data=params)
 
-            instance_created = self.utils.waitfor(find_new_instance, 120, 5)
+            instance_created = self.utils.waitfor(find_new_instance, 180, 5)
             if instance_created:
                 instance = find_new_instance()
             else:
@@ -133,7 +135,7 @@ class InstanceHelper(BaseRESTHelper):
         res = self.utils.send_request('POST', 'terminate_instances', data=params)
         # make sure the instances are not in the list anymore.
         condition = lambda: len([i for i in self.utils.get_list('instances') if i['instanceId'] in list_of_ids]) == 0
-        return self.utils.waitfor(condition, 60, 3)
+        return self.utils.waitfor(condition, 180, 3)
 
     def show_instance(self, id):
         """
@@ -243,7 +245,7 @@ class ImageHelper(BaseRESTHelper):
             if len([i for i in img_snp if i['id'] == id]) == 0:
                 return True
 
-        return self.utils.waitfor(check_image_deleted, 10, 2)
+        return self.utils.waitfor(check_image_deleted, 180, 2)
 
     def create_image(self, parameters=None):
         """
@@ -252,8 +254,9 @@ class ImageHelper(BaseRESTHelper):
         """
         params = {
             'name': '',
-            'location': 'http://some.where.com/image.iso',
-            'diskFormat': 'iso',
+            'location': "https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img",
+            #'location': 'http://172.18.94.4/cirros2.img',
+            'diskFormat': 'qcow2',
             'minDisk': 1,
             'minRam': 128,
             'shared': 'on'
@@ -278,12 +281,12 @@ class ImageHelper(BaseRESTHelper):
             else:
                 return False
 
-        ok_(self.utils.waitfor(find_new_image, 20, 2), "Creation of image with 'active' status failed.")
+        ok_(self.utils.waitfor(find_new_image, 180, 2), "Creation of image with 'active' status failed.")
         return find_new_image()
 
     def create_image_via_cli(self, name):
         """
-        Create image via glance CLI (it's not part of Aurora functionality).
+        Create image via glance CLI (it's not part of Asgard functionality).
         Method expects to find image in the root directory.
         Return:
           - new image id or False if creation failed.

@@ -1,205 +1,149 @@
 package com.paypal.aurora
 
 import com.paypal.aurora.auth.UserLoginToken
-import com.paypal.aurora.exception.RestClientRequestException
 import grails.converters.JSON
 import grails.converters.XML
 import org.apache.shiro.SecurityUtils
 import org.apache.shiro.grails.ConfigUtils
-import org.apache.shiro.web.util.WebUtils
 
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletResponse
 
 class AuthController {
 
+    static final String ENVIRONMENT = "environment"
+    
     def static allowedMethods = [signIn: 'POST', signOut: 'GET']
 
-    def shiroSecurityManager
-    def openStackRESTService
+    def authService
     def sessionStorageService
     def configService
-
+    
     def index = {
         redirect(action: "login", params: params)
     }
 
     def login = {
-        if (grailsApplication.metadata['grails.env'] != 'production'){
-            configService.reloadConfig()
-            if (!configService.appConfigured) {
-                redirect(controller: 'init')
-                return
-            }
-        }
         if (SecurityUtils.subject?.isAuthenticated()) {
-            redirect(uri: "/")
+            redirect(uri: getServletContext().getContextPath())
             return true
         }
+        if(configService.getSignInUrl()?.trim()) {
+            redirect(url: configService.getSignInUrl())
 
-        params.environment = g.cookie(name: "environment")
-        return [username: params.username, rememberMe: (params.rememberMe != null), targetUri: params.targetUri]
-    }
-
-    def attemptToConnect = {
-        if (SecurityUtils.subject?.isAuthenticated()) {
-            redirect(uri: "/")
-            return true
+        } else {
+            params.vpc = g.cookie(name: ENVIRONMENT)
+            return [username: params.username]
         }
 
-        //tenant
-        def userLoginToken = new UserLoginToken((String)params.username, (String)params.password, (String)params.environment)
-
-        // Support for "remember me"
-        if (params.rememberMe) {
-            userLoginToken.rememberMe = true
-        }
-
-        // If a controller redirected to this page, redirect back
-        // to it. Otherwise redirect to the root URI.
-        def targetUri = params.targetUri ?: "/"
-
-        // Handle requests saved by Shiro filters.
-        def savedRequest = WebUtils.getSavedRequest(request)
-        if (savedRequest) {
-            targetUri = savedRequest.requestURI - request.contextPath
-            if (savedRequest.queryString) targetUri = targetUri + '?' + savedRequest.queryString
-        }
-
-        SecurityUtils.subject.login(userLoginToken)
-    }
-
-    def getRedirectUrl() {
-        def environmentName = params.environment
-        def environment = grailsApplication.config.properties.environments.find {it.name == environmentName}
-
-        environment?.redirect_url
     }
 
     def signIn = { ConnectionCommand cmd ->
-        if (cmd.hasErrors()){
-            def model = cmd.errors
+        //log off prev prev signin.
+        def principalPrevLogin = SecurityUtils.subject?.principal
+        SecurityUtils.subject?.logout()
+        ConfigUtils.removePrincipal(principalPrevLogin)
+        
+        sessionStorageService.logoutUrl = ''
+        def baseLoginUrl = cmd.loginUrl
+        
+        if (cmd.hasErrors()) {
+            def target = cmd.errors
+            def loginUrl = baseLoginUrl+'?errorMsg='+cmd.getErrorMessage()
+            log.info(new JSON(target))
+            
             withFormat {
-                xml {new XML(model).render(response)}
-                json {new JSON(model).render(response)}
+                html {redirect(url:loginUrl)}
+                xml { new XML(target).render(response) }
+                json { new JSON(target).render(response) }
             }
             return false
         }
 
-        def redirect_url = redirectUrl
-
-        if (redirect_url) {
-            def listErrors = ['redirectUrl': redirect_url]
-            def errors = listErrors
-            def model = [errors : errors]
+        //need for netflix asgard
+        def redirectUrl = authService.getEnvironmentRedirectUrl(params.vpc)
+        if (redirectUrl) {
+            def target = ['redirectUrl': redirectUrl]
             withFormat {
-                html { model }
-                xml { new XML(model).render(response) }
-                json { new JSON(model).render(response) }
+                xml { new XML(target).render(response) }
+                json { new JSON(target).render(response) }
             }
             return true
         }
 
-        attemptToConnect()
+        def userLoginToken = new UserLoginToken((String) params.username, (String) params.password, (String) params.vpc)
 
-        try{
-            def dataCenterMap = openStackRESTService.sessionStorageService.getDataCentersMap()
-            def listErrors = [:]
-            def possibleToConnect = openStackRESTService.haveAvailableDatacenters
-            def authErrors = openStackRESTService.authErrors
-            def environmentError = openStackRESTService.environmentError
-            for (datacenter in dataCenterMap){
-                if (datacenter.value.error == null)
-                    continue
-                def error =  datacenter.value.error
-                String name = datacenter.value.name
-                if (error){
-                    name = name.substring(1,name.length());
-                    listErrors[name] = error;
-                }
-            }
-
-            def code = null
-
-            if (possibleToConnect){
-                code = 200
-            }else{
-                if (authErrors || environmentError) {
-                    code = 401
-                }
-                else {
-                    code = 500
-                }
-            }
-
-            if (code == 200) {
-                response.addCookie(new Cookie("environment", params.environment))
-            }
-
-            response.status = code
-            if (environmentError)
-                listErrors['environmentError'] = true
-
-            def model = [errors : listErrors]
-
-            withFormat {
-                html { model }
-                xml { new XML(model).render(response) }
-                json { new JSON(model).render(response) }
-            }
-        } catch (RestClientRequestException e) {
-            def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = openStackRESTService.getCode(e)
-            withFormat {
-                html { flash.message = error; redirect(uri: "/")}
-                xml { new XML([errors : error]).render(response) }
-                json { new JSON([errors : error]).render(response)}
-            }
+        SecurityUtils.subject.login(userLoginToken)
+        
+        if (authService.isAuthFailed()) {
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+        } else {
+            response.addCookie(new Cookie(ENVIRONMENT, params.vpc))
+            response.status = HttpServletResponse.SC_OK
         }
-    }
 
-    def signOut = {
-        // Log the user out of the application.
-        try{
-            sessionStorageService.clearSession()
+        def target = [errors: authService.getDataCenterErrors()]
+        def loginUrl = baseLoginUrl+'?errorMsg='+'Invalid+username+or+password.'
+        if (authService.isAuthFailed()) {
+            withFormat {
+                html {redirect(url:loginUrl)}
+                xml { new XML(target).render(response) }
+                json { new JSON(target).render(response) }
+            }
+            //clean signout.. remove principal if login has failed.
             def principal = SecurityUtils.subject?.principal
             SecurityUtils.subject?.logout()
-            // For now, redirect back to the home page.
-            if (ConfigUtils.getCasEnable() && ConfigUtils.isFromCas(principal)) {
-                redirect(uri: ConfigUtils.getLogoutUrl())
-            } else {
-                redirect(uri: "/")
-            }
             ConfigUtils.removePrincipal(principal)
-        } catch (Exception e){
-            def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            sessionStorageService.logoutUrl=''
+        } else {
+            sessionStorageService.logoutUrl=baseLoginUrl
             withFormat {
-                html { redirect(uri: "/") }
-                xml { new XML([errors : error]).render(response)}
-                json { new JSON([errors : error]).render(response)}
-            }
+                html {redirect(uri: '/')}
+                xml { new XML(target).render(response) }
+                json { new JSON(target).render(response) }
+            } 
         }
+        
+    }
+    
+    def signOut = {
+        def logoutUrl = sessionStorageService.logoutUrl
+        
+        def principal = SecurityUtils.subject?.principal
+        SecurityUtils.subject?.logout()
+        
+        // For now, redirect back to the home page.
+        if (ConfigUtils.getCasEnable() && ConfigUtils.isFromCas(principal)) {
+            redirect(uri: ConfigUtils.getLogoutUrl())
+        } else {
+            redirect(url: logoutUrl)
+        }
+        sessionStorageService.logoutUrl=''
+        ConfigUtils.removePrincipal(principal)
     }
 
     def unauthorized = {
-        render "You do not have permission to access this page."
-    }
-
-    class ConnectionCommand{
-        String username
-        String password
-        String environment
-        String targetUri
-        boolean rememberMe
-        static constraints = {
-            username(nullable: false, blank: false)
-            password(nullable: false, blank: false)
-            environment(nullable: false, blank: false)
+        if (!SecurityUtils.subject?.isAuthenticated()) {
+            redirect(uri: getServletContext().getContextPath())
+            return true
         }
+        render (status: HttpServletResponse.SC_UNAUTHORIZED, text: "You do not have permission to access this page. <a href='${resource(dir: '/')}'>Return to main page</a>")
     }
 
-    def notSupported(){
-        response.sendError(405)
+}
+
+class ConnectionCommand {
+    String username
+    String password
+    String vpc
+    String loginUrl
+    static constraints = {
+        username(nullable: false, blank: false)
+        password(nullable: false, blank: false)
+        vpc(nullable: false, blank: false)
+    }
+    def String getErrorMessage() {
+       return 'Username,+password+and+vpc+are+required.'
+
     }
 }

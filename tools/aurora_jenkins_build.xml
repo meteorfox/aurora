@@ -103,7 +103,7 @@ rpmbuild  \
           <EscalateStatus>false</EscalateStatus>
           <RunIfJobSuccessful>true</RunIfJobSuccessful>
           <script>sudo rpm -Uvh rpmbuild/RPMS/x86_64/aurora*.rpm&#xd;
-sudo /etc/init.d/aurora.init restart</script>
+sudo /etc/init.d/aurora restart</script>
         </hudson.plugins.postbuildtask.TaskProperties>
       </tasks>
     </hudson.plugins.postbuildtask.PostbuildTask>
@@ -167,3 +167,4 @@ sudo /etc/init.d/aurora.init restart</script>
   </publishers>
   <buildWrappers/>
 </project>
+- 

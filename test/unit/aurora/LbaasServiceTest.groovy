@@ -1,6 +1,9 @@
 package aurora
 
-import com.paypal.aurora.*
+import com.paypal.aurora.InstanceService
+import com.paypal.aurora.LbaasService
+import com.paypal.aurora.NetworkService
+import com.paypal.aurora.OpenStackRESTService
 import com.paypal.aurora.model.*
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
@@ -51,6 +54,12 @@ class LbaasServiceTest extends GMockTestCase {
     static final job = [comments: 'comments1', completionDate: 'after', creationDate: 'before', jobId: "${jobId}",
             requestMethod: 'PUT', requestBody: "body", requestURI: '/uri', status: 'COMPLETE', tenantName: tenantName, taskType: 't']
 
+    static final deleteServicesResponse = [
+            removedItems: [],
+            notRemovedItems: [],
+            errors: [:]
+    ]
+
     static final methodsPath = "${tenantPath}methods/"
     final methods = ['peeping']
 
@@ -65,7 +74,7 @@ class LbaasServiceTest extends GMockTestCase {
         service.openStackRESTService = openStackRESTService
         service.openStackRESTService.LBMS.returns(LBMS).stub()
 
-        SessionStorageService sessionStorageService = mock(SessionStorageService)
+        SessionStorage sessionStorageService = mock(SessionStorage)
         service.sessionStorageService = sessionStorageService
         service.sessionStorageService.tenant.returns([name: tenantName]).stub()
 
@@ -244,27 +253,7 @@ class LbaasServiceTest extends GMockTestCase {
 
     }
 
-    def testAddServicesWithExternalFLIP() {
-        service.networkService.isUseExternalFLIP().returns(true).times(1)
-
-        def instance = new Instance(InstanceServiceTest.instance1AsMap)
-        instance.floatingIps << new IPContainer('127.0.0.3')
-
-        service.instanceService.getById('instanceId1').returns(instance).times(1)
-
-        def postedService = [name: lbService.name, ip: '127.0.0.3', port: '82', weight: '12', enabled: 'true']
-
-        service.openStackRESTService.post(LBMS, poolPathEditService, [pool: [[name: poolName, services: [postedService]]]]).returns([]).times(1)
-
-        play {
-            service.addServices(['instanceId1'], poolName, lbService.name, 'eth0', '82', '12', true)
-        }
-
-    }
-
-    def testAddServicesWithOutExternalFLIP() {
-        service.networkService.isUseExternalFLIP().returns(false).times(1)
-
+    def testAddServices() {
         def instance = new Instance(InstanceServiceTest.instance1AsMap)
         instance.floatingIps << new IPContainer('127.0.0.3')
         IPContainer flip = new IPContainer('127.0.0.4')
@@ -285,20 +274,10 @@ class LbaasServiceTest extends GMockTestCase {
     }
 
     def testDeleteServices() {
-        service.openStackRESTService.get(LBMS, poolServicesPath).returns([service: [lbService]]).stub()
-        service.openStackRESTService.get(LBMS, pool2ServicesPath).returns([service: [lbService2]]).stub()
-
-        service.openStackRESTService.get(LBMS, poolNamePath).returns([pool: pool]).stub()
-        service.openStackRESTService.get(LBMS, pool2NamePath).returns([pool: pool2]).stub()
-
-        service.openStackRESTService.get(LBMS, poolPath).returns(
-                [tenantpools: [pools: [poolName, pool2], tenantName: tenantName]]
-        )
-
-        service.openStackRESTService.delete(LBMS, lbServicePath).returns(jobResponse).stub()
+        service.openStackRESTService.delete(LBMS, lbServicePath).returns(deleteServicesResponse).stub()
 
         play {
-            assertEquals([jobResponse], service.deleteServices([lbService.ip]))
+            assertEquals(deleteServicesResponse, service.deleteServices([], poolName))
         }
 
     }
@@ -308,7 +287,7 @@ class LbaasServiceTest extends GMockTestCase {
         service.openStackRESTService.delete(LBMS, lbServicePath).returns(jobResponse).stub()
 
         play {
-            assertEquals(jobResponse, service.deleteService(poolName, lbService.name))
+            assertEquals(jobResponse, service.deleteService(lbService.name, poolName))
         }
     }
 

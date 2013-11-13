@@ -1,10 +1,7 @@
 package aurora
 
 import com.paypal.aurora.*
-import com.paypal.aurora.model.ExternalFloatingIp
-import com.paypal.aurora.model.FloatingIp
-import com.paypal.aurora.model.Instance
-import com.paypal.aurora.model.RestResponse
+import com.paypal.aurora.model.*
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
 import org.gmock.WithGMock
@@ -20,20 +17,19 @@ class InstanceServiceTest extends GMockTestCase {
             min_count: 1, max_count: 1, key_name: 'fm1kp',
             security_groups: [[name: 'default']],
             availability_zone: 'local-lab1',
-            block_device_mapping: [[device_name:'deviceName', volume_size:'',
-                    volume_id:'3fbbef8b-0ae4-4b8b-9281-6edcc52739f5', delete_on_termination:'1']],
-            user_data:'a2lsbCAxMjM0'],
-            networks: [['uuid': QuantumServiceTest.network1]],
-
-            ]
+            block_device_mapping: [[device_name: 'deviceName', volume_size: '',
+                    volume_id: '3fbbef8b-0ae4-4b8b-9281-6edcc52739f5', delete_on_termination: '1']],
+            user_data: 'a2lsbCAxMjM0',
+            networks: [['uuid': QuantumServiceTest.network1]]]
+    ]
 
     static final bodyForInstanceCreation2 = [server: [name: 'temp',
             flavorRef: '0c8039da-259d-47da-b9b7-dbdea4af1f05',
             imageRef: '09fc3cbe-3ed3-4b21-893c-3f860be9e9e1',
             min_count: 1, max_count: 1, key_name: 'fm1kp',
             security_groups: [[name: 'default']], availability_zone: 'local-lab1',
-            block_device_mapping: [[device_name:'deviceName', volume_size:'',
-                    snapshot_id:'1234', delete_on_termination:'0']]]]
+            block_device_mapping: [[device_name: 'deviceName', volume_size: '',
+                    snapshot_id: '1234', delete_on_termination: '0']]]]
     static final instanceMapForCreation = [securityGroups: ['default'],
             count: '1',
             _securityGroups: ['', '', '', '', '', '', '', '', '', ''],
@@ -111,9 +107,10 @@ class InstanceServiceTest extends GMockTestCase {
         service.openStackRESTService = mock(OpenStackRESTService);
         service.openStackRESTService.NOVA.returns(NOVA).stub()
         service.networkService = mock(NetworkService)
-        service.sessionStorageService = mock(SessionStorageService)
+        service.sessionStorageService = mock(SessionStorage)
         service.sessionStorageService.isFlagEnabled(SHOW_USER_CREDENTIALS).returns(false).stub()
         service.sessionStorageService.isFlagEnabled(SHOW_ADMIN_CREDENTIALS).returns(true).stub()
+        service.sessionStorageService.tenants.returns([]).stub()
         service.quantumDNSService = mock(QuantumDNSService)
         service.quantumDNSService.isEnabled().returns(true).stub()
     }
@@ -129,7 +126,7 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testResume() {
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", '{"resume": null}').returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.resume(instance1AsMap.id))
         }
     }
@@ -137,7 +134,7 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testSuspend() {
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", '{"suspend": null}').returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.suspend(instance1AsMap.id))
         }
     }
@@ -145,7 +142,7 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testPause() {
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", '{"pause": null}').returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.pause(instance1AsMap.id))
         }
     }
@@ -153,7 +150,7 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testUnpause() {
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", '{"unpause": null}').returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.unpause(instance1AsMap.id))
         }
     }
@@ -161,7 +158,7 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testCreateSnapshot() {
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", [createImage: [name: instance1AsMap.name, metadata: [:]]]).returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.createSnapshot(instance1AsMap.id, instance1AsMap.name))
         }
     }
@@ -171,7 +168,7 @@ class InstanceServiceTest extends GMockTestCase {
         int length = 35
         def resp = [output: "log string"]
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", ['os-getConsoleOutput': [length: length]]).returns(resp)
-        play{
+        play {
             assertEquals(resp.output, service.getLog(instance1AsMap.id, length))
         }
     }
@@ -180,7 +177,7 @@ class InstanceServiceTest extends GMockTestCase {
     void testGetVncUrl() {
         def resp = [console: [url: 'url']]
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", ['os-getVNCConsole': ['type': 'novnc']]).returns(resp)
-        play{
+        play {
             assertEquals(resp.console.url, service.getVncUrl(instance1AsMap.id))
         }
     }
@@ -188,7 +185,7 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testReboot() {
         service.openStackRESTService.post(NOVA, "servers/$instance1AsMap.id/action", [reboot: [type: "SOFT"]]).returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.reboot(instance1AsMap.id))
         }
     }
@@ -196,29 +193,29 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testDeleteById() {
         service.openStackRESTService.delete(NOVA, "servers/$instance1AsMap.id").returns(OKResponse)
-        play{
+        play {
             assertEquals(OKResponse, service.deleteById(instance1AsMap.id))
         }
     }
 
 
     void testListAll() {
-        service.openStackRESTService.get(NOVA, 'servers/detail').returns(instanceListAsMap)
+        service.openStackRESTService.get(NOVA, 'servers/detail', null).returns(instanceListAsMap)
         service.networkService.getFloatingIps().returns([floatingIp]).stub()
         service.networkService.isUseExternalFLIP().returns(false).times(1)
 
-        play{
+        play {
             assertArrayEquals(instances.toArray(), service.listAll(true).toArray())
         }
     }
 
 
     void testListAllUseExternalFLIP() {
-        service.openStackRESTService.get(NOVA, 'servers/detail').returns(instanceListAsMap)
+        service.openStackRESTService.get(NOVA, 'servers/detail', null).returns(instanceListAsMap)
         service.networkService.getExternalFloatingIpsMap().returns(externalFloatingIpsMap).stub()
         service.networkService.isUseExternalFLIP().returns(true).times(1)
 
-        play{
+        play {
             assertArrayEquals(instances.toArray(), service.listAll(true).toArray())
         }
     }
@@ -228,15 +225,13 @@ class InstanceServiceTest extends GMockTestCase {
         def map = instanceListAsMap
         List<Instance> instances = [] as LinkedList
         for (server in map.servers) {
-            if("Active".equals(server.status)) {
+            if ("Active".equals(server.status)) {
                 instances.push(new Instance(server))
             }
         }
 
-        service.openStackRESTService.get(NOVA, 'servers/detail').returns(map)
-        service.networkService.isUseExternalFLIP().returns(false)
-        service.networkService.getFloatingIps().returns([]).stub()
-        play{
+        service.openStackRESTService.get(NOVA, 'servers/detail', null).returns(map)
+        play {
             assertArrayEquals(instances.toArray(), service.getAllActiveInstances().toArray())
         }
     }
@@ -244,8 +239,8 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testGetById() {
         def externalFloatingIp = new ExternalFloatingIp()
-        externalFloatingIp.fixedIpAddress='1.1.1.1'
-        externalFloatingIp.floatingIpAddress='8.8.8.8'
+        externalFloatingIp.fixedIpAddress = '1.1.1.1'
+        externalFloatingIp.floatingIpAddress = '8.8.8.8'
         def externalFloatingIps = [externalFloatingIp]
 
         service.openStackRESTService.get(NOVA, "servers/$instance1AsMap.id").returns([server: instance1AsMap]).times(1)
@@ -256,7 +251,7 @@ class InstanceServiceTest extends GMockTestCase {
 
         Instance instance = new Instance(instance1AsMap)
         instance.networks[0].fqdn = FQDN
-        play{
+        play {
             assertEquals(instance, service.getById(instance1AsMap.id, true, true))
         }
     }
@@ -266,31 +261,29 @@ class InstanceServiceTest extends GMockTestCase {
         service.openStackRESTService.get(NOVA, "servers/$instance1AsMap.id").returns([server: instance1AsMap]).times(1)
         Instance instance = new Instance(instance1AsMap)
 
-        play{
+        play {
             assertEquals(instance, service.getById(instance1AsMap.id, false))
         }
     }
-
-
+    
     void testIsSendAZOnCreate() {
-        SessionStorageService sessionStorageServiceMock = mock(SessionStorageService)
+        SessionStorage sessionStorageServiceMock = mock(SessionStorage)
         sessionStorageServiceMock.isFlagEnabled('instance_create_send_availibility_zone').returns(true)
         service.sessionStorageService = sessionStorageServiceMock
-        play{
+        play {
             assertTrue(service.isSendAZOnCreate())
         }
     }
-
-
+    
     void testCreation() {
         Instance instance = new Instance(instance1AsMap)
 
-        SessionStorageService sessionStorageServiceMock = mock(SessionStorageService)
+        SessionStorage sessionStorageServiceMock = mock(SessionStorage)
         sessionStorageServiceMock.isFlagEnabled('instance_create_send_availibility_zone').returns(true)
         service.sessionStorageService = sessionStorageServiceMock
 
         service.openStackRESTService.post(NOVA, 'servers', bodyForInstanceCreation).returns(instance)
-        play{
+        play {
             assertEquals(instance, service.create(instanceMapForCreation))
         }
     }
@@ -298,17 +291,18 @@ class InstanceServiceTest extends GMockTestCase {
 
     void testCreation2() {
         Instance instance = new Instance(instance1AsMap)
-        service.sessionStorageService = mock(SessionStorageService)
+        service.sessionStorageService = mock(SessionStorage)
         service.sessionStorageService.isFlagEnabled('instance_create_send_availibility_zone').returns(true)
+        
         service.openStackRESTService.post(NOVA, 'servers', bodyForInstanceCreation2).returns(instance)
-        play{
+        play {
             assertEquals(instance, service.create(instanceMapForCreation2))
         }
     }
 
 
     void testExists() {
-        service.openStackRESTService.get(NOVA, 'servers/detail').returns(instanceListAsMap).times(2)
+        service.openStackRESTService.get(NOVA, 'servers/detail', null).returns(instanceListAsMap).times(2)
 
         play {
             assertTrue(service.exists(instance1AsMap.name))

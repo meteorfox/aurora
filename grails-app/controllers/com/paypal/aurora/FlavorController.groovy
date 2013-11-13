@@ -18,7 +18,7 @@ class FlavorController {
 
     def list = {
         List<Flavor> flavors = []
-        try{
+        try {
             flavors = flavorService.listAll()
             def model = [flavors : flavors]
             withFormat {
@@ -26,10 +26,10 @@ class FlavorController {
                 xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
             }
-        }catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [flavors: flavors, errors : error, flash: [message: error]]
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
                 html { model }
                 xml { new XML(model).render(response) }
@@ -41,23 +41,16 @@ class FlavorController {
     @RoleRequired('admin')
     def delete = {
         List<String> flavorIds = Requests.ensureList(params.selectedFlavors ?: params.flavorId)
-        List<String> notRemovedFlavorIds = []
-        def deleted = []
-        def error = [:]
-        for (id in flavorIds) {
-            try{
-                flavorService.delete(id)
-                deleted << id
-            } catch (RestClientRequestException e){
-                notRemovedFlavorIds << id
-                error[id] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def view = [deleted : deleted, not_deleted_ids : notRemovedFlavorIds, error : error]
+        def model = flavorService.deleteFlavors(flavorIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete flavors: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { redirect(action: 'list') }
-            xml { new XML(view).render(response) }
-            json { new JSON(view).render(response) }
+            html {
+                flash.message = flashMessage
+                redirect(action: 'list')
+            }
+            xml { new XML(model).render(response) }
+            json { new JSON(model).render(response) }
         }
     }
 
@@ -92,6 +85,7 @@ class FlavorController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
                     html { flash.message = errors; chain(action: 'create', params: params)}
@@ -105,9 +99,6 @@ class FlavorController {
 }
 
 class FlavorCreateCommand {
-
-    def quotaService
-    def sessionStorageService
 
     String name
     String ram

@@ -21,6 +21,10 @@ class TestInstances(UIBaseTest):
         # cls.utils.cleanup_objects(cls.ihelper.terminate_instances, 'instances', id_key='instanceId')
         super(TestInstances, cls).teardown_class()
 
+    def setup(self):
+        super(TestInstances, self).setup()
+        self.uidriver.click_menu(self.uimap.menu_compute, self.uimap.menu_instances)
+
     def test_01_launch_instance(self):
         # content = self.uidriver.get_table_content(self.uimap.tbl_instances)
         image = self.config["image"]
@@ -77,7 +81,7 @@ class TestInstances(UIBaseTest):
         self.instances.append(name)
 
     def test_02_rename_instance(self):
-        ok_(len(self.instances) == 1, "Instance wasn't created in prev. test-case. Interrupting.")
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_rename)
@@ -94,6 +98,7 @@ class TestInstances(UIBaseTest):
         self.instances[0] = name
 
     def test_03_view_log(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         ins_name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, ins_name)
         self.uidriver.click(*self.uimap.bt_log)
@@ -101,6 +106,7 @@ class TestInstances(UIBaseTest):
         ok_(len(text) > 1, "Fail! Log is empty.")
 
     def test_04_create_snapshot(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         ins_name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, ins_name)
         self.uidriver.click(*self.uimap.bt_create_snapshot)
@@ -118,6 +124,7 @@ class TestInstances(UIBaseTest):
         ok_(r is not False and len(r) == 1, "Failed to create instance snapshot %s." % snapname)
 
     def test_05_vnc_console(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_vnc)
@@ -126,6 +133,7 @@ class TestInstances(UIBaseTest):
         self.uidriver.click(*self.uimap.bt_up)
 
     def test_06_pause_instance(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_pause)
@@ -139,6 +147,7 @@ class TestInstances(UIBaseTest):
         ok_(rows is not False, "Failed instance pausing.")
 
     def test_07_unpause_instance(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         if self.uidriver.is_element_present(*self.uimap.bt_unpause):
@@ -155,6 +164,7 @@ class TestInstances(UIBaseTest):
         ok_(rows is not False, "Failed instance unpausing.")
 
     def test_08_suspend_instance(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_suspend)
@@ -168,6 +178,7 @@ class TestInstances(UIBaseTest):
         ok_(rows is not False, "Failed instance suspending.")
 
     def test_09_resume_instance(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_resume)
@@ -181,6 +192,7 @@ class TestInstances(UIBaseTest):
         ok_(rows is not False, "Failed instance resuming.")
 
     def test_10_reboot_instance(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         name = self.instances[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_reboot)
@@ -206,6 +218,7 @@ class TestInstances(UIBaseTest):
         self.uidriver.filter_table('')
 
     def test_12_terminate_instance(self):
+        ok_(len(self.instances) > 0, "Instance wasn't created in prev. test-case. Interrupting.")
         ui_instances = [f['name'] for f in self.utils.get_list('instances') if f['name'].startswith(self.prefix)]
         for name in ui_instances:
             self.uidriver.click_row_checkbox(self.uimap.tbl_instances, lambda r: r['NAME'] == name)

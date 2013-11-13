@@ -2,7 +2,10 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="compute"/>
+    <meta name="menu-level-2" content="instances"/>
+    <meta name="menu-level-3" content="Launch Instance"/>
     <title>Launch Instance</title>
     <script type="text/javascript">
         var snapshotString = "${InstanceController.InstanceSources.SNAPSHOT}";
@@ -11,222 +14,243 @@
         var notBootString = "${InstanceController.VolumeOptions.NOT_BOOT}";
         var bootFromVolumeString = "${InstanceController.VolumeOptions.BOOT_FROM_VOLUME}";
     </script>
-    <script type="text/javascript" src="/js/instances-ui.js"></script>
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'ddautorefresh.js')}"></script>
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'instances-ui.js')}"></script>
+    <script>
+        jQuery(document).ready(function () {
+            initCreatePage();
+        });
+    </script>
 </head>
 
 <body>
 <div class="body">
-<h1>Launch Instance</h1>
-<g:if test="${flash.message}">
-    <div id="error_message" class="error">${flash.message}</div>
-</g:if>
-<g:hasErrors bean="${cmd}">
-    <div id="error_message" class="error">
-        <g:renderErrors bean="${cmd}" as="list"/>
+<div class="container">
+<div class="row">
+    <div class="col-md-12">
+        <g:if test="${flash.message}">
+            <div id="message" class="message alert alert-info">${flash.message}</div>
+        </g:if>
+        <div id="info_box" class="hide">${flash.message}</div>
+        <g:hasErrors bean="${cmd}">
+            <div class="alert alert-error">
+                <g:renderErrors bean="${cmd}" as="list"/>
+            </div>
+        </g:hasErrors>
     </div>
-</g:hasErrors>
-
-
-<div id="instanceTabs" class="c3Tabs">
-<ul>
-    <li><a href="#detailsTab" id="details">Details</a></li>
-    <li><a href="#accessAndSecurityTab" id="accessAndSecurity">Access and security</a></li>
-    <g:if test="${params.networks}">
-        <li><a href="#networkingTab" id="networking">Networking</a></li>
-    </g:if>
-    <g:ifServiceEnabled name="${OpenStackRESTService.NOVA_VOLUME}">
-        <li><a href="#volumeOptionsTab" id="volumeOptions">Volume options</a></li>
-    </g:ifServiceEnabled>
-    <li><a href="#postCreationTab" id="postCreation">Post-Creation</a></li>
-</ul>
-<g:form action="save" method="post" class="validate allowEnterKeySubmit">
-    <div id="detailsTab" class="dialog">
-        <table id="table_instanceSource">
-            <tbody>
-            <tr class="prop">
-                <td class="name">
-                    <label for="cb_instance_source">Instance source:</label>
-                </td>
-                <td>
-                    <g:select id="cb_instance_source" name="instanceSources" from="${params.instanceSourcesArray}"
-                              optionValue="displayName" value="${params.instanceSources}"/>
-                </td>
-            </tr>
-            <tr id="imageSources" class="prop">
-                <td class="name">
-                    <label for="cb_image">Image:</label>
-                </td>
-                <td>
-                    <g:select id="cb_image" name="image" from="${params.images}"
-                              optionKey="id" optionValue="name" value="${params.image}"/>
-                </td>
-            </tr>
-            <tr id="snapshotSources" class="prop">
-                <td class="name">
-                    <label for="select_instCreate_snapshot">Snapshot:</label>
-                </td>
-                <td>
-                    <g:select id="select_instCreate_snapshot" name="snapshot" from="${params.snapshots}"
-                              optionKey="id" optionValue="name" value="${params.snapshot}"/>
-                </td>
-            </tr>
-            <tr class="prop">
-                <td class="name">
-                    <label for="input_instCreate_name">Name:</label>
-                </td>
-                <td>
-                    <g:textField id="input_instCreate_name" name="name" value="${params.name}"/>
-                </td>
-            </tr>
-            <tr class="prop">
-                <td class="name">
-                    <label for="cb_flavor">Flavor:</label>
-                </td>
-                <td>
-                    <g:select id="cb_flavor" name="flavor" from="${params.flavors}"
-                              optionKey="id" optionValue="name" value="${params.flavor}"/>
-                </td>
-            </tr>
-            <g:if test="${params.needDatacenter}">
-                <tr class="prop">
-                    <td class="name">
-                        <label for="select_instCreate_datacenter">Datacenter:</label>
-                    </td>
-                    <td>
-                        <g:select id="select_instCreate_datacenter" name="datacenter" from="${params.datacenters}" value="${params.datacenter}"/>
-                    </td>
-                </tr>
-            </g:if>
-            <tr class="prop">
-                <td class="name">
-                    <label for="input_instCreate_count">Instance Count:</label>
-                </td>
-                <td>
-                    <g:textField id="input_instCreate_count" name="count" value="${params.count}"/>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-
-
-    <div id="accessAndSecurityTab">
-        <table id="table_instanceKeypair">
-            <tbody>
-            <tr class="prop">
-                <td class="name">
-                    <label for="cb_keypair">Keypair:</label>
-                </td>
-                <td>
-                    <g:select id="cb_keypair" name="keypair" from="${params.keypairs}" value="${params.keypair}"/>
-                </td>
-            </tr>
-
-            <tr class="prop">
-                <td class="name valignTop">
-                    <label for="securityGroups">Security Groups:</label>
-                </td>
-                <td>
-                    <g:each in="${params.securityGroupsArray}" var="securityGroup">
-                        <g:checkBox name="securityGroups" id="checkbox_${securityGroup.name}"
-                               value="${securityGroup.name}" checked="${params.securityGroups?.contains(securityGroup.name)}"/>${securityGroup.name}<br>
-                    </g:each>
-                </td>
-            </tr>
-            <tbody>
-        </table>
-
-    </div>
-
-    <g:if test="${params.networks}">
-        <div id="networkingTab" class="prop">
-            <table id="table_networks">
-                <tbody>
-                    <tr>
-                        <td>
-                            <g:each in="${params.networks}" var="network">
-                                <g:checkBox name="isNetworks" id="checkbox_${network.name}"
-                                            value="${network.id}" checked="${params.isNetworks?.contains(network.id)}"/>${network.name}<br>
-                            </g:each>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </g:if>
-    <g:ifServiceEnabled name="${OpenStackRESTService.NOVA_VOLUME}">
-        <div id="volumeOptionsTab">
-            <table id="table_instanceVolumeOptions">
-                <tbody>
-                <tr class="prop">
-                    <td class="name">
-                        <label for="cb_options">Volume options:</label>
-                    </td>
-                    <td>
-                        <g:select id="cb_options" name="volumeOptions" from="${params.volumeOptionsArray}" optionValue="displayName" value="${params.volumeOptions}"/>
-                    </td>
-                </tr>
-                <tr id="volumes" class="prop">
-                    <td class="name">
-                        <label for= "cb_vol_type">Volume</label>
-                    </td>
-                    <td>
-                        <g:select id="cb_vol_type" name="volume" from="${params.volumes}"
-                                  optionKey="id" optionValue="displayName" value="${params.volume}"/>
-                    </td>
-                </tr>
-                <tr id="volumeSnapshots" class="prop">
-                    <td class="name">
-                        <label for="cb_volumeSnapshot">Volume snapshot:</label>
-                    </td>
-                    <td>
-                        <g:select id="cb_volumeSnapshot" name="volumeSnapshot" from="${params.volumeSnapshots}"
-                                  optionKey="id" optionValue="name" value="${params.volumeSnapshot}"/>
-                    </td>
-                </tr>
-                <tr id="deviceName" class="prop">
-                    <td class="name">
-                        <label>Device name:</label>
-                    </td>
-                    <td>
-                        <g:textField id="input_instCreate_deviceName" name="deviceName" value="${params.deviceName}"/>
-                    </td>
-                </tr>
-                <tr id="deleteOnTerminate" class="prop">
-                    <td class="name">
-                        <label for="deviceName">Delete on Terminate</label>
-                    </td>
-                    <td>
-                        <g:checkBox id="checkbox_instCreate_deleteOnTerminate" name="deleteOnTerminate" value="${params.deleteOnTerminate ?: false}"/>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </g:ifServiceEnabled>
-
-    <div id="postCreationTab">
-        <table id="table_instanceScript">
-            <tbody>
-            <tr class="prop">
-                <td class="name valignTop">
-                    <label for="customizationScript">Customization script:</label>
-                </td>
-                <td>
-                    <g:textArea id="customizationScript" name="customizationScript" value="${params.customizationScript}"/>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-    </div>
-
-    <div class="buttons">
-        <g:buttonSubmit class="save" id="submit" action="save" title="Create new instance with selected parameters">Launch Instance</g:buttonSubmit>
-    </div>
-</g:form>
 </div>
 
+<div class="row">
+<div class="col-md-8">
+<g:form action="save" method="post" class="validate allowEnterKeySubmit form-horizontal fill-up">
+<div class="box">
+<div class="box-header">
+    <div class="title">Launch Instance</div>
 
+    <ul class="nav nav-tabs nav-tabs-right">
+        <li class="active"><a data-toggle="tab" href="#detailsTab" id="details">Details</a></li>
+
+        <li><a data-toggle="tab" href="#accessAndSecurityTab"
+               id="accessAndSecurity">Access and security</a></li>
+        <g:if test="${params.quantumEnabled}">
+            <li class="hide"><a data-toggle="tab" href="#networkingTab"
+                                id="networking">Networking</a></li>
+        </g:if>
+        <g:ifServiceEnabled name="${OpenStackRESTService.NOVA_VOLUME}">
+            <li><a data-toggle="tab" href="#volumeOptionsTab"
+                   id="volumeOptions">Volume options</a></li>
+        </g:ifServiceEnabled>
+        <li><a data-toggle="tab" href="#postCreationTab" id="postCreation">Post-Creation</a>
+        </li>
+    </ul>
+
+</div>
+
+<div class="box-content padded">
+    <div class="tab-content" style="min-height:240px;">
+        <div id="detailsTab" class="tab-pane active">
+            <div class="form-group">
+                <label class="control-label col-lg-3">Instance source</label>
+
+                <div class="col-lg-5">
+                    <g:select id="cb_instance_source" name="instanceSources"
+                              from="${params.instanceSourcesArray}"
+                              optionValue="displayName"
+                              value="${params.selectedInstanceSource}"/>
+                </div>
+            </div>
+
+            <div class="form-group" id="imageSources">
+                <label class="control-label col-lg-3">Image</label>
+
+                <div class="col-lg-5">
+                    <g:select id="cb_image" name="image" from="${params.images}"
+                              optionKey="id" optionValue="name" value="${params.image}"/>
+                </div>
+            </div>
+
+            <div class="form-group" id="snapshotSources">
+                <label class="control-label col-lg-3">Snapshot</label>
+
+                <div class="col-lg-5">
+                    <g:select id="select_instCreate_snapshot" name="snapshot"
+                              from="${params.snapshots}"
+                              optionKey="id" optionValue="name" value="${params.snapshot}"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-lg-3">Name</label>
+
+                <div class="col-lg-5">
+                    <g:textField id="input_instCreate_name" name="name" value="${params.name}"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-lg-3">Flavor</label>
+
+                <div class="col-lg-5">
+                    <g:select id="cb_flavor" name="flavor" from="${params.flavors}"
+                              optionKey="id" optionValue="name" value="${params.flavor}"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-lg-3">Instance Count</label>
+
+                <div class="col-lg-5">
+                    <g:textField id="input_instCreate_count" name="count"
+                                 value="${params.count}"/>
+                </div>
+            </div>
+            <g:if test="${params.needDatacenter}">
+                <input type="hidden" name="datacenter" value="${params.datacenter}"/>
+            </g:if>
+
+        </div>
+
+        <div id="accessAndSecurityTab" class="tab-pane">
+            <div class="form-group">
+                <label class="control-label col-lg-3">Keypair</label>
+
+                <div class="col-lg-5">
+                    <g:select id="cb_keypair" name="keypair" from="${params.keypairs}"
+                              value="${params.keypair}"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-lg-3">Security Groups</label>
+
+                <div class="col-lg-5">
+                    <g:each in="${params.securityGroupsArray}" var="securityGroup">
+                        <g:checkBox name="securityGroups" id="checkbox_${securityGroup.name}"
+                                    value="${securityGroup.name}" class="icheck"
+                                    checked="${params.securityGroups?.contains(securityGroup.name)}"/>
+                        <label>${securityGroup.name}</label><br/>
+                    </g:each>
+                </div>
+            </div>
+
+        </div>
+
+        <g:if test="${params.networksArray}">
+
+            <div id="networkingTab" class="hide tab-pane">
+                <div class="form-group">
+                    <label class="control-label col-lg-3">Networking</label>
+
+                    <div class="col-lg-7">
+                        <g:each in="${params.networksArray}" var="network">
+                            <g:checkBox name="networks" id="checkbox_${network.name}"
+                                        value="${network.id}" class="icheck"
+                                        checked="${params.networks?.contains(network.id)}"/>
+                            <label>${network.name}</label><br/>
+                        </g:each>
+                    </div>
+                </div>
+            </div>
+        </g:if>
+        <g:ifServiceEnabled name="${OpenStackRESTService.NOVA_VOLUME}">
+            <div id="volumeOptionsTab" class="tab-pane">
+                <div class="form-group">
+                    <label class="control-label col-lg-3">Volume options</label>
+
+                    <div class="col-lg-5">
+                        <g:select id="cb_options" name="volumeOptions"
+                                  from="${params.volumeOptionsArray}"
+                                  optionValue="displayName" value="${params.volumeOptions}"/>
+                    </div>
+                </div>
+
+                <div class="form-group" id="volumes">
+                    <label class="control-label col-lg-3">Volume</label>
+
+                    <div class="col-lg-5">
+                        <g:select id="cb_vol_type" name="volume" from="${params.volumes}"
+                                  optionKey="id" optionValue="displayName"
+                                  value="${params.volume}"/>
+                    </div>
+                </div>
+
+                <div class="form-group" id="volumeSnapshots">
+                    <label class="control-label col-lg-3">Volume snapshot</label>
+
+                    <div class="col-lg-4">
+                        <g:select id="cb_volumeSnapshot" name="volumeSnapshot"
+                                  from="${params.volumeSnapshots}"
+                                  optionKey="id" optionValue="name"
+                                  value="${params.snapshotId}"/>
+                    </div>
+                </div>
+
+                <div class="form-group" id="deviceName">
+                    <label class="control-label col-lg-3">Device Name</label>
+
+                    <div class="col-lg-5">
+                        <g:textField id="input_instCreate_deviceName" name="deviceName"
+                                     value="${params.deviceName}"/>
+                    </div>
+                </div>
+
+                <div class="form-group" id="deleteOnTerminate">
+                    <label class="control-label col-lg-3">Delete on Terminate</label>
+
+                    <div class="col-lg-5">
+                        <g:checkBox class="icheck" id="checkbox_instCreate_deleteOnTerminate"
+                                    name="deleteOnTerminate"
+                                    value="${params.deleteOnTerminate ?: false}"/>
+                    </div>
+                </div>
+            </div>
+        </g:ifServiceEnabled>
+
+        <div id="postCreationTab" class="tab-pane">
+            <div class="form-group">
+                <label class="control-label col-lg-3">Customization script</label>
+
+                <div class="col-lg-7">
+                    <g:textArea rows="6" id="customizationScript" name="customizationScript"
+                                value="${params.customizationScript}"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="box-footer">
+    <div class="form-actions">
+        <g:buttonSubmit class="save btn btn-green" id="submit" action="save"
+                        title="Create new instance with selected parameters">Launch Instance</g:buttonSubmit>
+    </div>
+</div>
+</div>
+</g:form>
+</div>
+</div>
+</div>
+</div>
 </body>
 </html>

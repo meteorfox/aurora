@@ -2,7 +2,7 @@ package aurora
 
 import com.paypal.aurora.OpenStackRESTService
 import com.paypal.aurora.PservService
-import com.paypal.aurora.SessionStorageService
+import com.paypal.aurora.model.SessionStorage
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
 import org.gmock.WithGMock
@@ -36,16 +36,16 @@ class PservServiceTest extends GMockTestCase {
         OpenStackRESTService openStackRESTService = mock(OpenStackRESTService);
         service.openStackRESTService = openStackRESTService
         service.openStackRESTService.PSERV.returns(PSERV).stub()
-        service.sessionStorageService = mock(SessionStorageService)
+        service.sessionStorageService = mock(SessionStorage)
     }
 
     def testCreateTicket() {
         def user = 'user'
         def body = [application: [type:'AURORA', subType:'LB Management'], title: 'action', description: 'desc', environment: 'name', dataCenterName: 'dataCenterName', assignee:'auroramanager', status: 'IN_PROGRESS', requester: [login: user], submitter: user]
         service.openStackRESTService.post(PSERV, TICKETS, body, null, null, [header : 'application/json', body: 'text/plain']).returns(new StringReader('ticketId')).times(1)
-        service.sessionStorageService.getCurrentEnv().returns([name: body.environment]).stub()
+        service.sessionStorageService.getEnvironmentName().returns(body.environment).stub()
         service.sessionStorageService.getDataCenterName().returns(body.dataCenterName).stub()
-        service.sessionStorageService.getUser().returns(user).stub()
+        service.sessionStorageService.getUserName().returns(user).stub()
 
         play {
             assertEquals('ticketId', service.createTicket(body.title, body.description))

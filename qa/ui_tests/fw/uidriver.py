@@ -1,3 +1,4 @@
+from nose.exc import SkipTest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
@@ -48,7 +49,10 @@ class UIDriver(object):
             el = ActionChains(self.webdriver).move_to_element(
                 self.webdriver.find_element(*main_menu))
             el.perform()
-            self.click(*sub_menu)
+            if self.is_element_present(*sub_menu):
+                self.click(*sub_menu)
+            else:
+                raise SkipTest("The menu item isn't present")
             self.filter_table('')
         except NoSuchElementException, e:
             return False

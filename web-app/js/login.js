@@ -1,14 +1,19 @@
 // enable loading indicator and disable "sign in" button during ajax request
-jQuery.loginLoadingStart = function (){
+jQuery.loginLoadingStart = function () {
     jQuery("#submit").prop("disabled", true).addClass("ui-state-disabled");
-    jQuery(".loginLoading").show();
+    jQuery("#submit i").addClass("icon-spinner").addClass("icon-spin").removeClass("icon-signin");
 }
 // disable loading indicator and enable "sign in" button after ajax request
 jQuery.loginLoadingEnd = function (){
     jQuery("#submit").prop("disabled", false).removeClass("ui-state-disabled");
-    jQuery(".loginLoading").hide();
+    jQuery("#submit i").removeClass("icon-spinner").removeClass("icon-spin").addClass("icon-signin");
 }
-
+jQuery.hideLoginButton = function (){
+    jQuery("#submit").hide();
+}
+jQuery.showLoginButton = function (){
+    jQuery("#submit").show();
+}
 jQuery.setLoginHint = function(selectEnv) {
     var loginHint = jQuery('.loginHint');
     if (loginHints[selectEnv]) {
@@ -18,29 +23,34 @@ jQuery.setLoginHint = function(selectEnv) {
         loginHint.hide();
     }
 }
+jQuery.buildLoginErrorMessagesString = function(errors) {
+    if(errors==null) {
+        return null;        
+    }
+    var count = 0;
+    var msg = '';
+    for(var key in errors) {
+        msg = msg + '<tr><td>' + key.toUpperCase() + '</td><td>' + errors[key] + '</td></tr>';
+        count++;
+    }
+    if(count==0) {
+        return null;
+    }
+    return msg;
+}
+
+jQuery.resetLoginMessages = function() {
+    jQuery("#failedLoginConfirmation").hide();
+}
 jQuery(function() {
-    // Prepare login info dialog
-    jQuery("#loginConfirmationDialog").dialog({
-        modal: true,
-        width: 500,
-        autoOpen: false,
-        close: function() {
-            jQuery.ajax({
-                url : '/auth/signOut'
-            })
-            jQuery.loginLoadingEnd();
-        }
-    });
-
     // Adding login hint
+    var selectedEnv = jQuery('#vpc').val();
+    jQuery.setLoginHint(selectedEnv);
 
-    var selectedEnv = jQuery('#environment').val();
-    //jQuery.setLoginHint(selectedEnv);
-
-    // Singing in handler
+    // Sign in handler
     jQuery("#submit").click(function() {
+        jQuery.resetLoginMessages();
         var highlightColor = '#51A2CA';
-        if (themeSettings == 'dark') highlightColor = '#FF7F0F';
 
         if ((!jQuery("#username").val() || !jQuery("#password").val()) && jQuery(".c3specific").is(":visible")) {
             jQuery(".loginToolTip").show().delay(1800).fadeOut();
@@ -51,129 +61,53 @@ jQuery(function() {
             return false;
         }  else {
             jQuery.loginLoadingStart();
-
             jQuery.ajax({
-                url : '/auth/signIn.json',
+                url : signInUrl,
                 type : 'POST',
                 data : {
                     password : jQuery("#password").val(),
                     username : jQuery("#username").val(),
-                    environment : jQuery("#environment").val()
+                    vpc : jQuery("#vpc").val()
                 },
                 dataType: 'json',
                 success : function (data){
-                    if (data.errors.redirectUrl) {
-                        window.location.replace(data.errors.redirectUrl)
-                        return
+                    if (data.redirectUrl) {
+                        window.location.replace(data.redirectUrl)
+                        return;
                     }
-                    // preparing Errors array, and compose message with errors list
-                    var errorsArray = {};
-                    var errorsArraySize = 0;
-                    var msg = '<div class="loginLoadingProceed" style="display:none; text-align: center;"><img src="/images/spinner.gif" alt="Spinner" ></div><div class = "moreInfo">Failed to connect to the following datacenters:</div><table cellspacing="0" cellpadding="0">';
-                    for(var key in data.errors) {
-                        var msg = msg + '<tr><td class="loginDataCenter">' + key + ': </td><td>' + data.errors[key] + '</td></tr>';
-                        errorsArray[key] = data.errors[key];
-                        errorsArraySize++;
-                    }
-                    msg = msg + '</table>';
-
-                    if (!window.location.origin)
-                        window.location.origin = window.location.protocol+"//"+window.location.host;
-                    var currentPath = window.location.origin;
-
-                    var targetUri = document.getElementsByName('targetUri')[0].value;
-
-                    if (errorsArraySize == 0) {
+                    var msg = jQuery.buildLoginErrorMessagesString(data.errors);
+                    window.location.replace(rootContextPath+"/");
+           /*
+                    if (!msg) {
                         // if everything ok - just load main page
-                        window.location.replace(currentPath + targetUri);
+                        window.location.replace(rootContextPath+"/");
                     } else {
-                        //some errors happens and needs more clarification
-                        jQuery("#loginConfirmationDialog").html(msg);
-                        // if  possibleToConnect == true then show "Proceed anyway" button
-                        jQuery("#loginConfirmationDialog").dialog({
-                            title: 'Connection problems',
-                            buttons: [{
-                                id:"proceed-anyway-button",
-                                text: "Proceed anyway",
-                                click: function() {
-                                    jQuery("#proceed-anyway-button").prop("disabled", true).addClass("ui-state-disabled");
-                                    jQuery(".loginLoadingProceed").show();
-                                    jQuery.ajax({
-                                        url : '/',
-                                        type : 'GET',
-                                        success : function(){
-                                            jQuery.loginLoadingEnd();
-                                            window.location.replace(currentPath + targetUri)
-                                        },
-                                        error : function(){
-                                            jQuery.loginLoadingEnd();
-                                            jQuery.ajax({
-                                                url : '/auth/signOut'
-                                            })
-                                            jQuery(this).dialog("close")
-                                        }
-                                    })
-                                }
-                            },
-                                {
-                                    id : "close-button",
-                                    text : "Return to login page",
-                                    click : function(){
-                                        jQuery.ajax({
-                                            url : '/auth/signOut'
-                                        })
-                                        jQuery(this).dialog("close");
-                                    }
-                                }
-                            ]
-                        });
-                        jQuery("#loginConfirmationDialog").dialog("open");
-                    }
+                        jQuery("#partialLoginConfirmation .message-area").html(msg);
+                        jQuery("#partialLoginConfirmation").show();
+                        jQuery.hideLoginButton();
+                    }*/
                 },
                 error : function(xhr){
-                    jQuery.loginLoadingEnd();
                     var data = jQuery.parseJSON(xhr.responseText);
-                    var errorsArray = {};
-                    var errorsArraySize = 0;
-                    var msg = '<div class="loginLoadingProceed" style="display:none; text-align: center;"><img src="/images/spinner.gif" alt="Spinner" ></div><div class = "moreInfo">Failed to connect to the following datacenters:</div><table cellspacing="0" cellpadding="0">';
-                    for(var key in data.errors) {
-                        var msg = msg + '<tr><td class="loginDataCenter">' + key + ': </td><td>' + data.errors[key] + '</td></tr>';
-                        errorsArray[key] = data.errors[key];
-                        errorsArraySize++;
-                    }
-                    msg = msg + '</table>';
-                    jQuery("#loginConfirmationDialog").html(msg);
-                    jQuery("#loginConfirmationDialog").dialog({
-                        title: 'Connection problems',
-                        buttons: [
-                            {
-                                id : "close-button",
-                                text : "Return to login page",
-                                click : function(){
-                                    jQuery.ajax({
-                                        url : '/auth/signOut'
-                                    })
-                                    jQuery(this).dialog("close");
-                                }
-                            }
-                        ]
-                    });
-                    jQuery("#loginConfirmationDialog").dialog("open");
+                    jQuery.loginLoadingEnd();
+                    var msg = jQuery.buildLoginErrorMessagesString(data.errors);
+                    jQuery("#failedLoginConfirmation .message-area").html(msg);
+                    jQuery("#failedLoginConfirmation").show();
+                    
                 }
             })
-            return false
+            return false;
         }
-
     });
 
-    jQuery('#environment').change(function() {
+    jQuery('#vpc').change(function() {
         var selectVal = jQuery(this).val();
 
         if (awsEnvironments.indexOf(selectVal) >= 0) {
             jQuery('.c3specific').hide();
         } else { jQuery('.c3specific').show();
         }
-        //jQuery.setLoginHint(selectVal);
+        jQuery.setLoginHint(selectVal);
     });
 
 

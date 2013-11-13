@@ -20,7 +20,7 @@ class TestVips(UIBaseTest):
         self.uidriver.click(*self.uimap.chk_enabled)
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
-
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_vips)
         r = self.uidriver.find_row(self.uimap.tbl_vips, lambda r: r['VIP NAME'] == name)
         ok_(len(r) == 1, "Failed to create LBaaS vip.")
         self.vips.append(name)
@@ -60,7 +60,7 @@ class TestVips(UIBaseTest):
         self.uidriver.click(*self.uimap.bt_delete)
         self.uidriver.click(*self.uimap.bt_confirm)
         ok_(*self.uidriver.chk_error_message())
-
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_vips)
         deleted = self.uidriver.wait_for_row_deleted(self.uimap.tbl_vips,
                                                      lambda s: s['VIP NAME'].startswith(self.prefix))
         ok_(deleted, "Failed to delete LBaaS vip(s).")

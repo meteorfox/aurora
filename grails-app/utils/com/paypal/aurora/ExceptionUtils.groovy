@@ -3,16 +3,31 @@ package com.paypal.aurora
 import com.paypal.aurora.exception.RestClientRequestException
 import org.apache.commons.logging.LogFactory
 
+import javax.servlet.http.HttpServletResponse
+
 class ExceptionUtils {
 
     private static final logger = LogFactory.getLog(this)
+    private static final String HEAT_ERROR_MESSAGE_KEY_WORD = "ValueError: "
 
     def static getExceptionMessage(Exception exception) {
         if (exception instanceof RestClientRequestException) {
             getMessage(exception.getCause())
+        } else if (exception instanceof UnknownHostException) {
+            "Unknown host ${getMessage(exception)}"
         } else {
             getMessage(exception)
         }
+    }
+
+    static int getExceptionCode (Exception exception){
+        int code
+        try{
+            code = exception.cause.statusCode
+        } catch(Exception e){
+            code = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        }
+        return code
     }
 
     def private static getMessage(Throwable throwable) {
@@ -30,6 +45,13 @@ class ExceptionUtils {
                                 def value = exceptionResponseData.find { it }.value
                                 if (value instanceof Map) {
                                     return value.message?:throwable.getMessage()
+                                }
+                            }
+                            if(exceptionResponseData instanceof StringReader) {
+                                for (String line: exceptionResponseData.text.split("\n")) {
+                                    if (line.startsWith(HEAT_ERROR_MESSAGE_KEY_WORD)) {
+                                        return line.substring(HEAT_ERROR_MESSAGE_KEY_WORD.length())
+                                    }
                                 }
                             }
                         }

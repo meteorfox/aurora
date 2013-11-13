@@ -1,9 +1,9 @@
-
 from restbasetest import *
 from common.rest.settings_helper import TenantHelper, UserHelper
 
 
 class TestTenantRequests(RESTBaseTest):
+    tenants = []
 
     @classmethod
     def setup_class(cls):
@@ -13,8 +13,9 @@ class TestTenantRequests(RESTBaseTest):
 
     def teardown(self):
         # after each test-case: remove tenant that was created
-        self.utils.cleanup_objects(self.thelper.delete_tenant, 'tenants')
         self.utils.cleanup_objects(self.uhelper.delete_user, 'users')
+        self.utils.cleanup_objects(self.thelper.delete_tenant, 'tenants')
+        #self.utils.cleanup_objects(self.uhelper.delete_user, 'users')
 
     def test_list_of_tenants(self):
         tenants = self.utils.get_list('tenants')
@@ -66,10 +67,10 @@ class TestTenantRequests(RESTBaseTest):
             if q['name'] in ('key_pairs', 'security_groups'):
                 ok_(q['limit'] == '55', "'Update tenant quotas' failed.")
 
-    def test_list_of_tenant_policies(self):
-        tenant = self.utils.get_list('tenants')[0]
-        tpolicies = self.thelper.get_tenant_policies(tenant['name'])
-        ok_(tpolicies is not False, "'List of tenant policies' failed.")
+    #def test_list_of_tenant_policies(self):
+    #    tenant = self.utils.get_list('tenants')[0]
+    #    tpolicies = self.thelper.get_tenant_policies(tenant['name'])
+    #    ok_(tpolicies is not False, "'List of tenant policies' failed.")
 
     def test_list_of_tenant_users(self):
         tenant = self.utils.get_list('tenants')[0]
@@ -79,6 +80,7 @@ class TestTenantRequests(RESTBaseTest):
     def test_update_tenant_users(self):
         # create tenant
         tenant = self.thelper.create_tenant()
+        ok_(tenant is not False, "Attempt to update tenant failed because it wasn't created.")
 
         # select initial and resulting roles
         roles = self.thelper.get_all_roles(tenant)

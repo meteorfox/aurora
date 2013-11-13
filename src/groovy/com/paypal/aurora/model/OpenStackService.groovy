@@ -1,57 +1,55 @@
 package com.paypal.aurora.model
 
+import groovy.transform.AutoClone
+import groovy.transform.AutoCloneStyle
+
+@AutoClone(style=AutoCloneStyle.SERIALIZATION)
 class OpenStackService implements Serializable {
-
-    private static final long serialVersionUID = 6688749953705040470L
-
     String name
     String type
-    String publicURL
-    String adminURL
+    String uri
+    String adminUri
+    // todo getHost
     String host
 
     //hacks for PP
     String user
     String password
-    String tokenId
+    transient String tokenId
     String tenant
     boolean disabled = false
+    List<String> monitors = []
+    List<String> methods = []
+    List<String> allowedProtocols = []
 
-    OpenStackService(String name, String type, String publicURL, String adminURL) {
-        this.name = name
-        this.type = type
-        setPublicURL(publicURL)
-        this.adminURL = adminURL
+    OpenStackService() {
+
     }
 
-    OpenStackService(String name, String type, String publicURL, String adminURL, String user, String password, String tenant, boolean disabled) {
-        this(name, type, publicURL, adminURL)
+    OpenStackService(String name, String type, String uri, String adminUri) {
+        this.name = name
+        this.type = type
+        setUri(uri)
+        this.adminUri = adminUri
+    }
+
+    OpenStackService(String name, String type, String uri, String adminUri, String user, String password, String tenant, boolean disabled) {
+        this(name, type, uri, adminUri)
         this.user = user
         this.password = password
         this.disabled = disabled
         this.tenant = tenant
     }
 
-    def setPublicURL(String publicURL) {
-        this.publicURL = publicURL
+    def setUri(String publicURL) {
+        this.uri = publicURL
         this.host = publicURL ? formatHost(publicURL) : null
     }
 
-    private static String formatHost(String host) {
-        String result = host;
-        if (result.indexOf("://") > 0) {
-            result = result.substring(result.indexOf("://") + 3, result.length());
-        }
 
-        if (result.indexOf(':') > 0) {
-            result = result.substring(0, result.indexOf(':'));
-        }
-
-        if (result.indexOf('/') > 0) {
-            result = result.substring(0, result.indexOf('/'));
-        }
-
-        return result;
+    // todo rewrite and Unit test
+    public static String formatHost(String host) {
+        (host =~ /(\w+:\/\/)?([^:^\/]+)(:\d+)?(\/.*)?/)[0][2]
     }
 
     @Override
@@ -59,8 +57,8 @@ class OpenStackService implements Serializable {
         return "OpenStackService{" +
                 "name='" + name + '\'' +
                 ", type='" + type + '\'' +
-                ", publicURL='" + publicURL + '\'' +
-                ", adminURL='" + adminURL + '\'' +
+                ", uri='" + uri + '\'' +
+                ", adminUri='" + adminUri + '\'' +
                 ", host='" + host + '\'' +
                 ", user='" + user + '\'' +
                 ", password='" + password + '\'' +

@@ -3,6 +3,7 @@ package aurora
 import com.paypal.aurora.OpenStackRESTService
 import com.paypal.aurora.QuantumDNSService
 import com.paypal.aurora.exception.RestClientRequestException
+import com.paypal.aurora.model.SessionStorage
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
 import org.gmock.WithGMock
@@ -45,13 +46,30 @@ class QuantumDNSServiceTest extends GMockTestCase {
             fullyQualifiedName: FULLY_QUALIFIED_NAME,
             recordName: '4.3'
     ]
-    private static final String WRONG_ZONE = "wrong_zone"
+    private static final String[] WRONG_ZONES = ['wrong_zone']
+    private static final def DNS_RECORDS_PPP = [records: [[
+            resourceType: 'A',
+            records: [[
+                    recordName: HOST,
+                    timeToLive: 300,
+                    ipAddresses: [IP]
+            ]]
+    ], [
+            resourceType: 'PTR',
+            records: [[
+                    recordName: '4',
+                    timeToLive: 300,
+                    fullyQualifiedName: "${HOST}.ppp.${ZONE}"
+            ]]
+    ]
+    ]]
 
 
     @Before
     void setUp() {
         service.openStackRESTService = mock(OpenStackRESTService)
         service.openStackRESTService.DNS.returns(DNS).stub()
+        service.sessionStorageService = mock(SessionStorage)
     }
 
     def testAddDnsRecord() {
@@ -61,10 +79,24 @@ class QuantumDNSServiceTest extends GMockTestCase {
         }
     }
 
+    def testAddDnsRecordPPP() {
+        service.openStackRESTService.post(DNS, "ppp.${ZONE}", DNS_RECORDS_PPP).returns(SUCCESS_RESPONSE)
+        play {
+            assertEquals(SUCCESS_RESPONSE, service.addDnsRecord(HOST, IP, ZONE, true))
+        }
+    }
+
     def testDeleteDnsRecord() {
         service.openStackRESTService.post(DNS, "$ZONE/action/delete", DNS_RECORDS).returns(SUCCESS_RESPONSE)
         play {
             assertEquals(SUCCESS_RESPONSE, service.deleteDnsRecord(HOST, IP, ZONE))
+        }
+    }
+
+    def testDeleteDnsRecordPPP() {
+        service.openStackRESTService.post(DNS, "ppp.${ZONE}/action/delete", DNS_RECORDS_PPP).returns(SUCCESS_RESPONSE)
+        play {
+            assertEquals(SUCCESS_RESPONSE, service.deleteDnsRecord(HOST, IP, ZONE, true))
         }
     }
 
@@ -121,20 +153,29 @@ class QuantumDNSServiceTest extends GMockTestCase {
     def testDeleteDnsRecordByIp() {
         service.openStackRESTService.post(DNS, "$ZONE/action/delete", DNS_RECORDS).returns(SUCCESS_RESPONSE).times(1)
         service.openStackRESTService.get(DNS, "$ZONE_FOR_DELETE/recordtypes/ptr/records/$OCTET").returns(FULLY_QUALIFIED_MAP).times(1)
+        service.sessionStorageService.getTenant().returns(zones: [ZONE]).times(1)
 
         play {
-            assertEquals(SUCCESS_RESPONSE, service.deleteDnsRecordByIP(IP, ZONE))
+            assertEquals(SUCCESS_RESPONSE, service.deleteDnsRecordByIP(IP))
         }
     }
 
     def testDeleteDnsRecordByIpWithException() {
         service.openStackRESTService.get(DNS, "$ZONE_FOR_DELETE/recordtypes/ptr/records/$OCTET").returns(FULLY_QUALIFIED_MAP).times(1)
+        service.sessionStorageService.getTenant().returns(zones: WRONG_ZONES).times(1)
 
         play {
             def message = shouldFail(RuntimeException) {
-                service.deleteDnsRecordByIP(IP, WRONG_ZONE)
+                service.deleteDnsRecordByIP(IP)
             }
-            assertEquals("Can not delete $IP from UDNS service. FQDN: $FULLY_QUALIFIED_NAME , but zone: $WRONG_ZONE", message)
+            assertEquals("Can not delete $IP from UDNS service. FQDN: $FULLY_QUALIFIED_NAME , but zones: $WRONG_ZONES", message)
+        }
+    }
+
+    def testDeleteDnsRecordByIpNegative() {
+        service.openStackRESTService.get(DNS, "$ZONE_FOR_DELETE/recordtypes/ptr/records/$OCTET").raises(new RestClientRequestException("message")).times(1)
+        play {
+            assertNull(service.deleteDnsRecordByIP(IP))
         }
     }
 }

@@ -14,6 +14,8 @@ class AuthenticationHelper(BaseRESTHelper):
         self.env = labconfig['environment']
         self.username = labconfig['username']
         self.password = labconfig['password']
+        self.datacenter = ""
+        self.tenantId = ""
 
     def login(self, parameters=None):
         """
@@ -34,6 +36,13 @@ class AuthenticationHelper(BaseRESTHelper):
 
         res = self.utils.send_request("POST", 'login', data=params)
         ok_("Invalid username and/or password" not in res.content, "Login to C3 failed.")
+
+        # Get Current User State
+        res = self.utils.send_request("GET", 'get_user_state')
+        ok_(res.status_code == 200, "Error while 'Get Current User State'")
+        self.datacenter = json.loads(res.content)["userState"]["dataCenterName"]
+        self.tenantId = json.loads(res.content)["userState"]["tenantId"]
+
         return True  # response contains empty dict, so it's more convenient to return bool
 
     def logout(self):
@@ -46,11 +55,11 @@ class AuthenticationHelper(BaseRESTHelper):
         return res['userState']['dataCenterName'], res['userState']['tenantId']
 
     def change_datacenter(self, dcname):
-        res = self.utils.send_request('GET', 'change_datacenter', data={'dataCenterName': dcname})
+        res = self.utils.send_request('POST', 'change_datacenter', data={'dataCenterName': dcname})
         return json.loads(res.content)
 
     def change_tenant(self, ten_id):
-        res = self.utils.send_request('GET', 'change_tenant', data={'tenantId': ten_id})
+        res = self.utils.send_request('POST', 'change_tenant', data={'tenantId': ten_id})
         return json.loads(res.content)
 
     def get_datacenters(self):

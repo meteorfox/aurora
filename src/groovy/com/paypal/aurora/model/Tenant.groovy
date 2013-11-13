@@ -3,10 +3,7 @@ package com.paypal.aurora.model
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
-class Tenant implements Serializable {
-
-    private static final long serialVersionUID = - 2922296541913072304L
-
+class Tenant {
     String id
     String name
     String description

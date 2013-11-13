@@ -1,39 +1,45 @@
 <%@ page import="com.paypal.aurora.Constant" %>
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="settings"/>
+    <meta name="menu-level-2" content="about"/>      
     <title>About</title>
-</head>
+  </head>
 
-<body>
-<div class="body">
-    <h1>About</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:form method="post">
-        <div class="list">
-            <table id="table_infoList" class="sortable">
-                <thead>
+  <body>
+    <div class="body">
+
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="message alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-content">
+            <table id="table_infoList" class="sortable table table-normal">
+              <thead>
                 <tr>
-                    <th>Parameter</th>
-                    <th>Value</th>
+                  <td style="width:25%">Parameter</td>
+                  <td>Value</td>
                 </tr>
-                </thead>
-                <tbody>
-                <g:each var="quota" in="${info}" status="i">
-                    <tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
-                        <td>${quota.key}</td>
-                        <td>${quota.value}</td>
-                    </tr>
-                </g:each>
-                </tbody>
+              </thead>
+              <tbody>
+              <g:each var="quota" in="${info}" status="i">
+                <tr>
+                  <td>${quota.key}</td>
+                  <td>${quota.value}</td>
+                </tr>
+              </g:each>
+              </tbody>
             </table>
+          </div>
         </div>
-        <div class="paginateButtons">
-        </div>
-    </g:form>
-</div>
-</body>
+      </div>
+    </div>
+  </body>
 </html>

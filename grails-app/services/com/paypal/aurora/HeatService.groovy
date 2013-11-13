@@ -21,16 +21,20 @@ class HeatService {
         List<Object> result = []
         if (json.Parameters) {
             json.Parameters.entrySet().each{
-                result << [name: it.key, default: it.value.Default, allowedValues: it.value.AllowedValues]
+                def allowedValues = it.value.AllowedValues
+                if (allowedValues != null) {
+                    allowedValues = allowedValues.toList()
+                }
+                result << [name: it.key, default: it.value.Default, allowedValues: allowedValues]
             }
         }
         return result
     }
 
-    def createStack(Integer templateInd, String name, Map<String, String> params) {
+    def createStack(String template, String name, Map<String, String> params) {
         openStackRESTService.post(openStackRESTService.HEAT, 'stacks', [
                 stack_name: name,
-                template: sessionStorageService.getExpiringVar(templateInd),
+                template: template,
                 timeout_mins: 60,
                 parameters: params
         ])
@@ -46,6 +50,11 @@ class HeatService {
         Stack stack = getById(id)
         String name = stack.name
         openStackRESTService.delete(openStackRESTService.HEAT, "stacks/$name/$id");
+    }
+
+    def deleteStacks(List <String> stackIds){
+        def model = ServiceUtils.removeItems(this, "delete", stackIds)
+        return model
     }
 
 }

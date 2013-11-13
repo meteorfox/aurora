@@ -16,13 +16,11 @@ class UserLoginToken extends UsernamePasswordToken {
         this.environment = environment
     }
 
-
-
     @Override
     public String toString() {
         return "UserLoginToken{" +
                 "username='" + username + '\'' +
-                "environment='" + environment + '\'' +
+                ",environment='" + environment + '\'' +
                 '}';
     }
 }

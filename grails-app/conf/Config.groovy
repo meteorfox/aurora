@@ -1,7 +1,12 @@
+import com.paypal.aurora.log.CustomPatternLayout
 import org.apache.log4j.DailyRollingFileAppender
 
 // http://grails.org/doc/latest/guide/3.%20Configuration.html#3.1.2 Logging
 log4j = {
+
+    def conversionPattern = '[%d{ISO8601}] %c{4}    %m%n'
+    def customPatternLayout = new CustomPatternLayout()
+    customPatternLayout.setConversionPattern(conversionPattern)
 
     appenders {
         def logDirectory = System.properties.getProperty('logger.dir') ?: '.'
@@ -9,12 +14,12 @@ log4j = {
         appender new DailyRollingFileAppender(
                 name: 'aurorarolling',
                 file: "$logDirectory/aurora.log",
-                layout: pattern(conversionPattern: '[%d{ISO8601}] [%t] %c{4}    %m%n'),
+                layout: customPatternLayout,
                 datePattern: "'.'yyyy-MM-dd")
         rollingFile(
                 name: "stacktrace",
                 file: "$logDirectory/stacktrace.log",
-                maxFileSize : '500MB'
+                maxFileSize: '500MB'
         )
     }
     def logLevel = System.properties.getProperty('logger.level') ?: 'info'
@@ -29,7 +34,7 @@ log4j = {
 
     environments {
         development {
-            console name: 'stdout', layout: pattern(conversionPattern: '[%d{ISO8601}] %c{4}    %m%n')
+            console name: 'stdout', layout: pattern(conversionPattern: conversionPattern)
             root {
                 "$logLevel" 'stdout'
             }
@@ -46,8 +51,6 @@ auroraHome = System.getenv('AURORA_HOME') ?: System.getProperty('AURORA_HOME') ?
 
 println "Using ${auroraHome} as AURORA_HOME"
 
-
-appConfigured = new File(auroraHome, 'Config.json').exists()
 
 grails.app.context = '/'
 grails.mime.file.extensions = true // enables the parsing of file extensions from URLs into the request format
@@ -85,7 +88,6 @@ grails.spring.bean.packages = ['com.paypal.aurora.subscriber', 'com.paypal.auror
 
 security.shiro.annotationdriven.enabled = true
 
-
 thread {
     useJitter = true
 }
@@ -110,7 +112,9 @@ server {
 environments {
     development {
         server.online = !System.getProperty('offline')
-        if (!server.online) { println 'Config: working offline' }
+        if (!server.online) {
+            println 'Config: working offline'
+        }
         plugin {
             refreshDelay = 5000
         }

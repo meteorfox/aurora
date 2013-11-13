@@ -16,7 +16,7 @@ class TenantService {
         for (tenant in resp.tenants) {
             tenants << new Tenant(tenant)
         }
-        tenants
+        tenants.sort{ it.name  }
     }
 
     Map<String, Tenant> getTenantsMap() {
@@ -38,9 +38,7 @@ class TenantService {
 
     def updateTenant(def params) {
         def body = ["tenant": ["id": params.id, "name": params.name, "description": params.description, "enabled": params.enabled == 'on']]
-        if (params.zones) {
-            body.tenant.zones = params.zones.split('\n')
-        }
+        body.tenant.zones = params.zones?.split('\r?\n')
         def resp = openStackRESTService.post(openStackRESTService.KEYSTONE, "${TENANTS}/${params.id}", body)
         new Tenant(resp.tenant)
     }
@@ -57,6 +55,10 @@ class TenantService {
 
     def deleteTenantById(def tenantId) {
         openStackRESTService.delete(openStackRESTService.KEYSTONE, "${TENANTS}/${tenantId}")
+    }
+
+    def deleteTenantsById(List <String> tenantIds){
+        return ServiceUtils.removeItems(this, "deleteTenantById", tenantIds)
     }
 
     boolean isKeystoneCustomTenancy() {

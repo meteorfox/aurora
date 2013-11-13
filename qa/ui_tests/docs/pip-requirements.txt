@@ -6,6 +6,6 @@ requests
 selenium
 beautifulsoup4
 # scpclient
-# paramiko
-# pycrypto
+paramiko
+pycrypto
 # pika

@@ -26,6 +26,10 @@ class SnapshotService {
         openStackRESTService.delete(openStackRESTService.NOVA_VOLUME, "${SNAPSHOTS}/${snapshotId}")
     }
 
+    def deleteSnapshotsById(List <String> snapshotIds){
+        return ServiceUtils.removeItems(this, "deleteSnapshotById", snapshotIds)
+    }
+
     def createSnapshot(def snapshot) {
         def body = [snapshot: [display_name: snapshot.name, force: false, display_description: snapshot.description,
                 volume_id: snapshot.id]];

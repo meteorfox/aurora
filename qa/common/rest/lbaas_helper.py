@@ -102,12 +102,12 @@ class PoolHelper(BaseRESTHelper):
         """
         res = self.utils.send_request('POST', 'enable_service', data=parameters)
         # TODO: if res contains meaningful content it's not needed to analyze results here. leave it for test-case.
-        services = parameters['selectedServices']
-        if type(services) == str:  # convert value to list for unified filtering below
-            services = [services]
-        enabled = [s for s in self.show_pool(parameters['pool'])['services']
-                   if s['name'] in services and s['enabled'] is True]
-        return len(enabled) == len(services)
+        #services = parameters['selectedServices']
+        #if type(services) == str:  # convert value to list for unified filtering below
+        #    services = [services]
+        #enabled = [s for s in self.show_pool(parameters['pool'])['services']
+        #           if s['name'] in services and s['enabled'] is True]
+        #return len(enabled) == len(services)
 
     def disable_service(self, parameters):
         """
@@ -117,12 +117,12 @@ class PoolHelper(BaseRESTHelper):
         """
         res = self.utils.send_request('POST', 'disable_service', data=parameters)
         # TODO: if res contains meaningful content it's not needed to analyze results here. leave it for test-case.
-        services = parameters['selectedServices']
-        if type(services) == str:  # convert value to list for unified filtering below
-            services = [services]
-        enabled = [s for s in self.show_pool(parameters['pool'])['services']
-                   if s['name'] in services and s['enabled'] is False]
-        return len(enabled) == len(services)
+        #services = parameters['selectedServices']
+        #if type(services) == str:  # convert value to list for unified filtering below
+        #    services = [services]
+        #enabled = [s for s in self.show_pool(parameters['pool'])['services']
+        #           if s['name'] in services and s['enabled'] is False]
+        #return len(enabled) == len(services)
 
 
 class VipHelper(BaseRESTHelper):

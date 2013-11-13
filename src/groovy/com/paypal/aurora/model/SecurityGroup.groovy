@@ -23,6 +23,10 @@ class SecurityGroup {
         }
     }
 
+    public boolean isDefault() {
+        return name.equalsIgnoreCase('default')
+    }
+
     @Override
     public String toString() {
         return "SecurityGroup{" +

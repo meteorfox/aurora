@@ -1,5 +1,6 @@
 package com.paypal.aurora
 
+import com.paypal.aurora.model.AvailabilityZone
 import com.paypal.aurora.model.FloatingIp
 import com.paypal.aurora.model.IPContainer
 import com.paypal.aurora.model.Instance
@@ -15,16 +16,19 @@ class InstanceService {
     static transactional = false
 
     def openStackRESTService
-    def grailsApplication
     def sessionStorageService
     def networkService
     def quantumDNSService
 
-    def listAll(boolean fillFloatingIPs = false) {
-        def resp = openStackRESTService.get(openStackRESTService.NOVA, 'servers/detail')
+    def listAll(boolean fillFloatingIPs = false, boolean forAllTenants = false) {
+        def resp = openStackRESTService.get(openStackRESTService.NOVA, 'servers/detail', forAllTenants ? ['all_tenants': 'True'] : null)
         List<Instance> result = [] as LinkedList
         for (server in resp.servers) {
-            result << new Instance(server)
+            def instance = new Instance(server)
+            if (forAllTenants) {
+                ServiceUtils.fillTenantName(instance, sessionStorageService.tenants)
+            }
+            result << instance
         }
         if (fillFloatingIPs) {
             if (networkService.isUseExternalFLIP()) {
@@ -53,8 +57,8 @@ class InstanceService {
         return result
     }
 
-    def getAllActiveInstances() {
-        listAll(true).findAll() {
+    def getAllActiveInstances(boolean fillFloatingIPs = false) {
+        listAll(fillFloatingIPs).findAll() {
             it.status.toLowerCase() == ACTIVE_STATUS
         }
     }
@@ -62,6 +66,7 @@ class InstanceService {
     Instance getById(String id, boolean fillFloatingIPs = true, boolean fillFQND = false) {
         def resp = openStackRESTService.get(openStackRESTService.NOVA, "servers/$id")
         Instance instance = new Instance(resp.server)
+        ServiceUtils.fillTenantName(instance, sessionStorageService.tenants)
         if (fillFQND && quantumDNSService.isEnabled()) {
             instance.networks.each {
                 it.fqdn = quantumDNSService.getFqdnByIp(it.ip)
@@ -71,7 +76,7 @@ class InstanceService {
             instance.floatingIps.addAll(networkService.getFloatingIpsForInstance(id))
             if (networkService.isUseExternalFLIP()) {
                 networkService.getExternalFloatingIps().each { flip ->
-                    if (instance.networks.find{it.ip == flip.fixedIpAddress})
+                    if (instance.networks.find { it.ip == flip.fixedIpAddress })
                         instance.floatingIps << flip
                 }
             }
@@ -98,10 +103,15 @@ class InstanceService {
         if (isSendAZOnCreate()) {
             body.server.availability_zone = instance.datacenter
         }
+        /*
+        if (instance.zone != "—") {
+            body.server.availability_zone = instance.zone
+        }
+        */
         if (instance.networks) {
             def networks = []
             Requests.ensureList(instance.networks).each { networks << [uuid: it] }
-            body.networks = networks
+            body.server.networks = networks
         }
         if (instance.volumeOptions && !(InstanceController.VolumeOptions.NOT_BOOT.toString().equals(instance.volumeOptions))) {
             def blockDeviceMapping = [:]
@@ -170,20 +180,37 @@ class InstanceService {
         openStackRESTService.delete(openStackRESTService.NOVA, "servers/$id")
     }
 
+    def deleteInstancesById(List<String> instanceIds) {
+        def model = ServiceUtils.removeItems(this, "deleteById", instanceIds)
+        return model
+    }
     boolean isSendAZOnCreate() {
         sessionStorageService.isFlagEnabled(SEND_AVAILIBILITY_ZONE_ON_CREATE)
     }
+    List<AvailabilityZone> getAvailabilityZones() {
+        def resp = openStackRESTService.get(openStackRESTService.NOVA, "os-availability-zone")
+        def zones = []
+        for (def zone : resp.availabilityZoneInfo) {
+            zones << new AvailabilityZone(zone);
+        }
+        return zones;
+    }
 
-    boolean isShowUserLoginCredentials(){
+    List<AvailabilityZone> getAvailableAvailabilityZones() {
+        return availabilityZones.findAll { it.available }
+    }
+
+    boolean isShowUserLoginCredentials() {
         sessionStorageService.isFlagEnabled(SHOW_USER_CREDENTIALS) || !sessionStorageService.isFlagEnabled(SHOW_ADMIN_CREDENTIALS)
     }
-    boolean isShowAdminLoginCredentials(){
+
+    boolean isShowAdminLoginCredentials() {
         sessionStorageService.isFlagEnabled(SHOW_ADMIN_CREDENTIALS) || !sessionStorageService.isFlagEnabled(SHOW_USER_CREDENTIALS)
     }
 
     boolean exists(String instanceName) {
         for (Instance instance : listAll(false)) {
-            if(instance.name.equals(instanceName)) {
+            if (instance.name.equals(instanceName)) {
                 return true
             }
         }

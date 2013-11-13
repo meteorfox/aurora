@@ -1,6 +1,11 @@
 import com.google.common.base.CaseFormat
 import com.paypal.aurora.ServiceInitLoggingBeanPostProcessor
+import com.paypal.aurora.model.SessionStorage
 import groovy.io.FileType
+import groovy.json.JsonSlurper
+import org.codehaus.jackson.map.DeserializationConfig
+import org.codehaus.jackson.map.ObjectMapper
+import org.springframework.aop.scope.ScopedProxyFactoryBean
 
 beans = {
     serviceInitLoggingBeanPostProcessor(ServiceInitLoggingBeanPostProcessor)
@@ -40,5 +45,20 @@ beans = {
     } else {
         println "Using default logging configuration"
     }
+
+    objectMapper(ObjectMapper)
+    objectMapperConfig(objectMapper:'configure', DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+    jsonSlurper(JsonSlurper)
+
+    sessionStorage(SessionStorage) { bean ->
+        bean.scope = 'session'
+    }
+
+    sessionStorageService(ScopedProxyFactoryBean) {
+        targetBeanName = 'sessionStorage'
+        proxyTargetClass = true
+    }
+
 
 }

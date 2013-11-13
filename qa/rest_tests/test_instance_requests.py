@@ -39,7 +39,17 @@ class TestInstanceRequests(RESTBaseTest):
         ins_id = created_ins['instanceId']
 
         shown_ins = self.ihelper.show_instance(ins_id)
-        ok_(created_ins == shown_ins, "'Show instance' failed. Expected: %s, Actual: %s." % (created_ins, shown_ins))
+        log = ""
+        res = []
+        for k in created_ins.keys():
+            if k == "networks" or k == "displayedIp":
+                continue
+            isOK = True if created_ins[k] == shown_ins[k] else False
+            res.append(isOK)
+            if not isOK:
+                log += "Expected: {prop}: {exp}\nActual: {prop}: {act}\n\n".format(prop=k, exp=created_ins[k], act=shown_ins[k])
+        ok_(all(res), "'Show instance' failed.\n%s." % (log))
+        # ok_(created_ins == shown_ins, "'Show instance' failed. Expected: %s, Actual: %s." % (created_ins, shown_ins))
 
     def test_update_instance(self):
         # create instance
@@ -119,6 +129,7 @@ class TestInstanceRequests(RESTBaseTest):
 if __name__ == "__main__":
     t = TestInstanceRequests()
     t.setup_class()
+    t.test_show_instance()
     # t.test_list_of_instances()
     # t.test_reboot_instance()
     # t.teardown()

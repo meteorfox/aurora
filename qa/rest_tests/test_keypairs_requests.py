@@ -43,7 +43,7 @@ class TestKeypairsRequests(RESTBaseTest):
 if __name__ == '__main__':
     t = TestKeypairsRequests()
     t.setup_class()
-    t.test_list_of_pairs()
+    #t.test_list_of_pairs()
     t.test_create_remove_keypair()
-    t.test_import_keypair()
+    #t.test_import_keypair()
     t.teardown()

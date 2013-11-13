@@ -16,7 +16,7 @@
             cache.push(cacheImage);
         }
     };
-    imagePath = '/images/terminator-450.png';
+    imagePath = rootContextPath + '/images/terminator-450.png';
     preLoadImages(imagePath);
 
     jokeHtml =

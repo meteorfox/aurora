@@ -27,6 +27,7 @@ class ImageController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [images : [], snapshots : [], errors : error, flash: [message: error]]
             withFormat {
@@ -50,6 +51,7 @@ class ImageController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -82,6 +84,7 @@ class ImageController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -111,6 +114,7 @@ class ImageController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -134,7 +138,7 @@ class ImageController {
             }
         } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             def model = [errors : error]
             withFormat {
                 html { flash.message = error; chain(action: 'show', params: params)}
@@ -164,6 +168,7 @@ class ImageController {
 
         } else {
             try {
+                params.location = params.location?.trim()
                 def resp = imageService.createImage(params)
                 def model = [resp : resp]
                 withFormat {
@@ -172,6 +177,7 @@ class ImageController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -190,7 +196,7 @@ class ImageValidationCommand {
     String shared
 
     static constraints = {
-        name(nullable: false, blank: false)
+        name(nullable: false, blank: false, matches: /\w[\w\-]*/)
     }
 
 }

@@ -1,95 +1,88 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="networking"/>
+    <meta name="menu-level-2" content="networks"/>    
+    <meta name="menu-level-3" content="Edit Network"/>   
     <title>Edit Network</title>
-</head>
+  </head>
 
-<body>
-<div class="body">
-    <h1>Edit Network</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:hasErrors bean="${cmd}">
-        <div id="error_message" class="error">
-            <g:renderErrors bean="${cmd}" as="list"/>
-        </div>
-    </g:hasErrors>
-    <g:form action="saveEdition" method="post" class="validate">
-        <div class="dialog">
-            <table id="table_editNetwork">
-                <tbody>
-                <tr class="prop">
-                    <td class="name">
-                        <label for="name">Name:</label>
-                    </td>
-                    <td>
-                        <g:textField id="name" name="name" value="${network.name}"/>
-                    </td>
-                </tr>
-
-                <tr class="prop">
-                    <td class="id">
-                        <label for="id">ID:</label>
-                    </td>
-                    <td>
-                        <g:textField id="id" name="id" value="${network.id}" readonly="readonly"/>
-                    </td>
-                </tr>
-
-                <tr class="prop">
-                    <td class="adminState">
-                        <label for="adminState">Admin State:</label>
-                    </td>
-                    <td>
-                        <g:if test="${network.adminStateUp}">
-                            <input id="adminState" type="checkbox" name="adminState" checked="checked">
-                        </g:if>
-                        <g:else>
-                            <input id="adminState" type="checkbox" name="adminState">
-                        </g:else>
-
-                    </td>
-                </tr>
-
-                <tr class="prop">
-                    <td class="shared">
-                        <label for="shared">Shared:</label>
-                    </td>
-                    <td>
-                        <g:if test="${network.shared}">
-                            <input id="shared" type="checkbox" name="shared" checked="checked">
-                        </g:if>
-                        <g:else>
-                            <input id="shared" type="checkbox" name="shared">
-                        </g:else>
-                    </td>
-                </tr>
-
-                <tr class="prop">
-                    <td class="external">
-                        <label for="external">External Network:</label>
-                    </td>
-                    <td>
-                        <g:if test="${network.external}">
-                            <input id="external" type="checkbox" name="external" checked="checked">
-                        </g:if>
-                        <g:else>
-                            <input id="external" type="checkbox" name="external">
-                        </g:else>
-
-                    </td>
-                </tr>
-
-                </tbody>
-            </table>
+  <body>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="alert alert-info">${flash.message}</div>
+            </g:if>    
+            <g:hasErrors bean="${cmd}">
+              <div id="error_message" class="alert alert-error">
+                <g:renderErrors bean="${cmd}" as="list"/>
+              </div>
+            </g:hasErrors>
+          </div>
         </div>
 
-        <div class="buttons">
-            <g:buttonSubmit id="submit" class="save" action="saveEdition" title="Save changes">Edit Network</g:buttonSubmit>
-        </div>
-    </g:form>
-</div>
-</body>
+        <g:form action="saveEdition" method="post" class="validate form-horizontal fill-up">
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Edit Network</span>
+            </div>
+            <div class="box-content padded">   
+              <div class="form-group">
+                <label class="control-label col-lg-2 required">Name *</label>
+                <div class="col-lg-4">
+                  <g:textField id="name" name="name" value="${network.name}"/>
+                </div>  
+              </div>
+              <div class="form-group">
+                <label class="control-label col-lg-2">ID</label>
+                <div class="col-lg-4">
+                  <g:textField id="id" name="id" value="${network.id}" readonly="readonly"/>
+                </div>  
+              </div>    
+              <div class="form-group">
+                <label class="control-label col-lg-2">Admin State</label>
+                <div class="col-lg-4">
+                  <g:if test="${network.adminStateUp}">
+                    <input id="adminState" class="icheck" type="checkbox" name="adminState" checked="checked">
+                  </g:if>
+                  <g:else>
+                    <input id="adminState" class="icheck" type="checkbox" name="adminState">
+                  </g:else>
+                </div>  
+              </div>
+              <div class="form-group">
+                <label class="control-label col-lg-2">Shared</label>
+                <div class="col-lg-4">
+                  <g:if test="${network.shared}">
+                    <input id="shared" type="checkbox" class="icheck" name="shared" checked="checked">
+                  </g:if>
+                  <g:else>
+                    <input id="shared" type="checkbox" class="icheck" name="shared">
+                  </g:else>
+                </div>  
+              </div>
+              <div class="form-group">
+                <label class="control-label col-lg-2">External Network</label>
+                <div class="col-lg-4">
+                  <g:if test="${network.external}">
+                    <input id="external" type="checkbox" class="icheck" name="external" checked="checked">
+                  </g:if>
+                  <g:else>
+                    <input id="external" type="checkbox" class="icheck" name="external">
+                  </g:else>
+                </div>  
+              </div>
+
+              <div class="form-actions">
+                <g:buttonSubmit id="submit" class="btn btn-green" action="saveEdition" title="Save changes">Save Changes</g:buttonSubmit>
+              </div>
+            </div>
+          </div>
+        </g:form>
+      </div>
+    </div>
+  </body>
 </html>

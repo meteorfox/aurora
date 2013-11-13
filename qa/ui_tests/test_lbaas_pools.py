@@ -36,6 +36,7 @@ class TestPools(UIBaseTest):
         self.uidriver.click(*self.uimap.chk_monitors_http)
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_pools)
         ok_(self.uidriver.is_element_in_table(self.uimap.tbl_pools, "NAME", name), "Failed to create LBaaS pool.")
         # r = self.uidriver.find_row(self.uimap.tbl_pools, lambda r: r['NAME'] == name)
         # ok_(len(r) == 1, "Failed to create LBaaS pool.")
@@ -83,6 +84,9 @@ class TestPools(UIBaseTest):
         self.uidriver.enter_text(self.uimap.ed_name, name)
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
+
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_pools)
+        self.uidriver.click(By.LINK_TEXT, self.pools[0])
         ok_(self.uidriver.is_element_in_table(self.uimap.tbl_lbaas_services, "NAME", name), "Failed to add service to pool.")
         # r = self.uidriver.find_row(self.uimap.tbl_lbaas_services, lambda s: s['NAME'] == name)
         # ok_(len(r), "Failed to add service to pool.")
@@ -91,10 +95,18 @@ class TestPools(UIBaseTest):
     def test_04_enable_disable_service(self):
         ok_(len(self.services) == 1, 'Service adding failed on prev. test-case. Interrupting.')
         # enter pool details page
-        self.uidriver.click(By.LINK_TEXT, self.pools[0])
+        def go_into_pool():
+            self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_pools)
+            self.uidriver.click(By.LINK_TEXT, self.pools[0])
+
+        #self.uidriver.click(By.LINK_TEXT, self.pools[0])
+        go_into_pool()
         # find checkbox for pre-created service and check it
         name = self.services[0]
-        self.uidriver.click_row_checkbox(self.uimap.tbl_lbaas_services, lambda s: s['NAME'] == name)
+        def select_service(name):
+            self.uidriver.click_row_checkbox(self.uimap.tbl_lbaas_services, lambda s: s['NAME'] == name)
+
+        select_service(name)
         # self.uidriver.click_row_checkbox(self.uimap.tbl_lbaas_services,
         #                                  lambda s: s['NAME'] == name and s['ENABLED'] == 'true')
         status = self.uidriver.get_value_of_element_in_field(self.uimap.tbl_lbaas_services, "NAME", name, "ENABLED")
@@ -102,16 +114,19 @@ class TestPools(UIBaseTest):
         def change_status(status):
             self.uidriver.click(*self.uimap.bt_confirm)
             ok_(*self.uidriver.chk_error_message())
+            self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_pools)
             return True if self.uidriver.get_value_of_element_in_field(self.uimap.tbl_lbaas_services, "NAME", name, "ENABLED") != enabled else False
 
         if status:
             self.uidriver.click(*self.uimap.bt_disable)
             ok_(change_status(status), "Failed to disable service.")
+            select_service(name)
             self.uidriver.click(*self.uimap.bt_enable)
             ok_(change_status(status), "Failed to enable service.")
         else:
             self.uidriver.click(*self.uimap.bt_enable)
             ok_(change_status(status), "Failed to enable service.")
+            select_service(name)
             self.uidriver.click(*self.uimap.bt_disable)
             ok_(change_status(status), "Failed to disable service.")
         #
@@ -154,6 +169,7 @@ class TestPools(UIBaseTest):
         # 5) Submit:
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_pools)
         ok_(self.uidriver.is_element_in_table(self.uimap.tbl_pools, "NAME", name), "Failed to create LBaaS pool.")
 
         # r = self.uidriver.find_row(self.uimap.tbl_pools, lambda r: r['NAME'] == name)
@@ -181,6 +197,7 @@ class TestPools(UIBaseTest):
         self.uidriver.click(*self.uimap.bt_delete)
         self.uidriver.click(*self.uimap.bt_confirm)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_pools)
         for name in ui_pools:
             deleted = self.uidriver.wait_for_deleted(self.uimap.tbl_pools, "NAME", name)
             ok_(deleted, "Failed to delete lbaas pool(s).")

@@ -1,18 +1,18 @@
 jQuery.portsChange = function(selectVal) {
     if (selectVal != 'ICMP') {
-        jQuery("#fromPortLabel").html('From port:');
-        jQuery("#toPortLabel").html('To port:');
+        jQuery("#fromPortLabel").html('From Port *');
+        jQuery("#toPortLabel").html('To Port *');
     } else {
-        jQuery("#fromPortLabel").html('Type:');
-        jQuery("#toPortLabel").html('Code:');
+        jQuery("#fromPortLabel").html('Type *');
+        jQuery("#toPortLabel").html('Code *');
     }
 }
 
 jQuery.cidrTrChange = function(selectVal) {
     if (selectVal == '0') {
-        jQuery('#cidrTr').show();
+        jQuery('#cidrSection').show();
     } else {
-        jQuery('#cidrTr').hide();
+        jQuery('#cidrSection').hide();
     }
 }
 

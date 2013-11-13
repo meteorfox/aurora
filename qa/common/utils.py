@@ -1,3 +1,5 @@
+__author__ = 'yyekovenko'
+
 import json
 from nose.tools import ok_
 from random import choice, randrange
@@ -39,14 +41,14 @@ class Utils:
         """
         headers = {"Content-Type": "application/json"}
         # timeout 10 sec wasn't enough for volume removing.
-        timeout = 60
+        timeout = 180
 
         if url in urls:
             full_url = self.build_url(urls[url])
         else:
             full_url = url
         resp = self.session.request(method, full_url, data=json.dumps(data), headers=headers, timeout=timeout)
-
+        ok_(resp.status_code != 500, "Method: %s\nURL: %s\nData: %s\nError 500: %s" % (method, full_url, json.dumps(data),resp.content))
         if validate_response:
             ok_(self.validate_response(resp), 'Response format is incorrect.')
         return resp
@@ -62,12 +64,18 @@ class Utils:
         Return:
           - True if both status and format are correct, False otherwise.
         """
+        #ok_(resp.status_code != 500, "Error 500: %s" % resp.content)
         is_code_ok = resp.status_code == expected_code
         if not is_code_ok:
             print("Expected response status: %s but received: %s." % (expected_code, resp.status_code))
         is_body_ok = False
         try:
-            json.loads(resp.content)
+            true = True
+            false = False
+            null = None
+            resp = json.loads(resp.content)
+            if resp.has_key('errors'):
+                ok_(not resp['errors'], resp['errors'])
             is_body_ok = True
         except ValueError:
             print("Response body is not in JSON format: \n%s" % resp.content)
@@ -212,3 +220,25 @@ class Utils:
             if len(objects) > remain:
                 for obj in objects[:-remain]:
                     delete_obj(obj[id_key])
+
+    def get_flags(self):
+        true = True
+        false = False
+        null = None
+        cf = self.send_request("GET", "config", validate_response=True)
+        return cf.json["datacenters"][0]["flags"]
+
+    def get_services(self):
+        true = True
+        false = False
+        null = None
+        srv = self.send_request("GET", "services", validate_response=True)
+        return [x["name"] for x in srv.json["openStackServices"] if x["name"] != None]
+
+    def create_test_dict(self):
+        flags = self.get_flags()
+        services = self.get_services()
+        srvs = {'nova': '', 'heat': '', 'heat-cfn': '', 'nova_volume': '', 'nova_ec2': '', 'keystone': ''}
+        for srv in srvs.keys():
+            srvs[srv] = True if srv in services else False
+        return srvs

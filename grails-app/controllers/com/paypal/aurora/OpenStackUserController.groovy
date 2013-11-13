@@ -24,6 +24,7 @@ class OpenStackUserController {
         try{
             openStackUsers = openStackUserService.getAllUsersByTenant(sessionStorageService.tenant.id)
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             openStackUsers = []
             error = ExceptionUtils.getExceptionMessage(e)
         }
@@ -65,6 +66,7 @@ class OpenStackUserController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e);
                 withFormat {
                     html { flash.message = errors; chain(action: 'create', params: params)}
@@ -78,27 +80,14 @@ class OpenStackUserController {
     @RoleRequired('admin')
     def delete = {
         List<String> userIds = Requests.ensureList(params.selectedUsers ?: params.id)
-        List<String> notRemovedUserIds = []
-        def deleted = []
-        def error = [:]
-        for (userId in userIds) {
-            try {
-                openStackUserService.deleteUserById(userId)
-                deleted << userId
-            } catch (RestClientRequestException e) {
-                log.error "Could not delete user: ${e}"
-                notRemovedUserIds << userId
-                error[userId] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def flashMessage = null
-        if (notRemovedUserIds) {
-            def ids = notRemovedUserIds.join(',')
-            flashMessage = "Could not delete users with id: ${ids}"
-        }
-        def model = [deleted: deleted, not_deleted_ids : notRemovedUserIds, errors : error]
+        def model = openStackUserService.deleteUsersById(userIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete users with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { flash.message = flashMessage; redirect(action: 'list')}
+            html {
+                flash.message = flashMessage;
+                redirect(action: 'list')
+            }
             xml { new XML(model).render(response) }
             json { new JSON(model).render(response) }
         }
@@ -111,7 +100,8 @@ class OpenStackUserController {
         try {
             tenant = tenantService.getTenantById(user.tenantId)
         } catch (RestClientRequestException e) {
-            tenant = [id : "", name: "No default tenant"]
+            response.status = ExceptionUtils.getExceptionCode(e)
+            tenant = [id : "", name: "No default project"]
         }
         withFormat {
             html {[parent:"/openStackUser",tenant : tenant, user: user]}
@@ -156,7 +146,8 @@ class OpenStackUserController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
-                def errors = ExceptionUtils.getExceptionMessage(e);
+                def errors = ExceptionUtils.getExceptionMessage(e)
+                response.status = ExceptionUtils.getExceptionCode(e)
                 withFormat {
                     html { flash.message = errors; chain(action: 'edit', params: params)}
                     xml { new XML([errors: errors]).render(response) }
@@ -200,7 +191,7 @@ class OpenStackUserUpdateCommand {
                 return "openStackUserCommand.password.confirm.error"
             }
         })
-        confirm_password (nullable: false, blank: false)
+        confirm_password (nullable: false, blank: true)
         email(nullable: false, blank: false, matches: OpenStackUserController.EMAIL_REGEX)
         tenant_id(nullable: false, blank: false, notEqual: "null")
     }

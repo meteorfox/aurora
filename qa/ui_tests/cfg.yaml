@@ -7,8 +7,8 @@ prefix: 'ui_'
 suffix: ''
 image: 'C63-5'
 #image_location: 'http://some.where.com/image.iso'
-image_location: "http://172.18.94.4/cirros2.img"
-#image_location: 'https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img'
+#image_location: "http://172.18.94.4/cirros2.img"
+image_location: 'https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img'
 flavor: 'XX-Small'
 keypair: 'heat_key'
 template: ''
@@ -50,7 +50,7 @@ lab: '172.18.198.44'
 '172.18.172.8':
     host: '172.18.172.7'
     port: '8080'
-    environment: 'ch2-dev'
+    environment: 'kharkov-dev'
     username: 'admin'
     password: 'local1lab'
     # used to connect to the lab via ssh and run console commands
@@ -97,7 +97,18 @@ sjn:
     port: '8085'
     username: 'admin'
     password: 'sjn1lab'
-    environment: 'paypal'
+    environment: 'paypal Grizzly_95_9'
+    lab_prefix: 'sjn'
+    suffix: '3001'
+    flavor: 'm1.tiny'
+    keypair: 'pp_keypair'
+
+'172.18.95.10':
+    host: 172.18.95.10
+    port: '8085'
+    username: 'admin'
+    password: 'sjn1lab'
+    environment: 'paypal Grizzly_95_9'
     lab_prefix: 'sjn'
     suffix: '3001'
     flavor: 'm1.tiny'

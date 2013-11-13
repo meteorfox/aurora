@@ -2,6 +2,7 @@ package aurora
 
 import com.paypal.aurora.OpenStackRESTService
 import com.paypal.aurora.QuantumService
+import com.paypal.aurora.ServiceUtils
 import com.paypal.aurora.TenantService
 import com.paypal.aurora.model.*
 import grails.converters.JSON
@@ -166,6 +167,7 @@ class QuantumServiceTest extends GMockTestCase {
         service.openStackRESTService.get(QUANTUM, "$PREFIX/networks.json").returns(networks).stub()
         service.openStackRESTService.get(QUANTUM, "$PREFIX/subnets.json").returns(subnets).stub()
         service.openStackRESTService.get(QUANTUM, "$PREFIX/ports.json").returns(ports).stub()
+        service.openStackRESTService.get(QUANTUM, "$PREFIX/ports.json", ['network_id': network1.id]).returns([ports:[port1]]).stub()
         service.openStackRESTService.get(QUANTUM, "$PREFIX/routers.json").returns(routers).stub()
 
         TenantService tenantService = mock(TenantService)
@@ -291,7 +293,7 @@ class QuantumServiceTest extends GMockTestCase {
 
     def testCreateSubnet() {
         def sub1 = new Subnet(subnet1)
-        def post = [
+        Map post = ServiceUtils.clearMap([
                 name: subnet1.name,
                 enable_dhcp: subnet1.enable_dhcp,
                 network_id: subnet1.network_id,
@@ -302,7 +304,7 @@ class QuantumServiceTest extends GMockTestCase {
                 tenant_id: subnet1.tenant_id,
                 host_routes: null,
                 cidr: subnet1.cidr
-        ]
+        ])
 
         service.openStackRESTService.post(QUANTUM, "$PREFIX/subnets", [subnet: post]).returns([subnet: subnet1]).times(1)
 
@@ -462,7 +464,7 @@ class QuantumServiceTest extends GMockTestCase {
         service.openStackRESTService.put(QUANTUM, "$PREFIX/routers/$router1.id/remove_router_interface", null, [port_id: port1.id]).returns(iface).times(1)
 
         play {
-            assertEquals(new JSON(iface).toString(), service.removeRouterInterface(router1.id, port1.id).toString())
+            assertEquals(new JSON(iface).toString(), service.removeRouterInterface(port1.id, router1.id).toString())
         }
     }
 

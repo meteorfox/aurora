@@ -11,24 +11,14 @@ class VolumeService {
     static transactional = false
 
     def openStackRESTService
-    def sessionStorageService
     def instanceService
     def quotaService
 
-    def getAllVolumes(boolean fillInstanceName = true) {
+    def getAllVolumes() {
         def resp = openStackRESTService.get(openStackRESTService.NOVA_VOLUME, "${VOLUMES}/detail")
         def volumes = []
         for (volume in resp.volumes) {
-            def volumeAdd = new Volume(volume)
-            if (volumeAdd.instanceId && fillInstanceName) {
-                try {
-                    volumeAdd.instanceName = instanceService.getById(volumeAdd.instanceId, false).name
-                } catch (Exception e) {
-                    log.warn("Failed to retriev instance [${volumeAdd.instanceId}] for volume [${volumeAdd.id}].")
-                }
-            }
-            volumes << volumeAdd
-
+            volumes << new Volume(volume)
         }
         volumes
     }
@@ -44,6 +34,11 @@ class VolumeService {
 
     def deleteVolumeById(def volumeId) {
         openStackRESTService.delete(openStackRESTService.NOVA_VOLUME, "$VOLUMES/$volumeId")
+    }
+
+    def deleteVolumesById(List<String> volumeIds) {
+        def model = ServiceUtils.removeItems(this, "deleteVolumeById", volumeIds)
+        return model
     }
 
     def createVolume(def volume) {
@@ -83,8 +78,13 @@ class VolumeService {
         openStackRESTService.delete(openStackRESTService.NOVA_VOLUME, "$TYPES/$typeId")
     }
 
+    def deleteVolumeTypesById(List<String> volumeTypeIds) {
+        def model = ServiceUtils.removeItems(this, "deleteVolumeTypeById", volumeTypeIds)
+        return model
+    }
+
     boolean exists(String volumeName) {
-        for (Volume volume : getAllVolumes(false)) {
+        for (Volume volume : getAllVolumes()) {
             if(volume.displayName.equals(volumeName)) {
                 return true
             }
@@ -93,7 +93,7 @@ class VolumeService {
     }
 
     def getAvailablePlaceInQuotas() {
-        def volumes = getAllVolumes(false)
+        def volumes = getAllVolumes()
         def gigabyteQuota = quotaService.getQuotaByName(QuotaService.GIGABYTES)
         def volumeQuota = quotaService.getQuotaByName(QuotaService.VOLUMES)
         def gigabytesAvailable = Integer.parseInt(gigabyteQuota.limit)

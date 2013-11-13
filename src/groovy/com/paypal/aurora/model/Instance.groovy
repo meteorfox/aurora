@@ -16,6 +16,8 @@ class Instance {
     String keyName
     String imageId
     String host
+    String tenantId
+    String tenantName
     List<IPContainer> floatingIps = []
     /**
      * Used for list instances. When external floating IP is enabled.
@@ -44,8 +46,8 @@ class Instance {
         host = data.get("OS-EXT-SRV-ATTR:host")
         taskStatus = data.get("OS-EXT-STS:task_state")?.capitalize()
         powerStatus = POWER_STATE.get(data.get("OS-EXT-STS:power_state"))
+        tenantId = data.tenant_id
     }
-
 
     @Override
     public String toString() {
@@ -58,6 +60,9 @@ class Instance {
                 ", securityGroups=" + securityGroups +
                 ", keyName='" + keyName + '\'' +
                 ", imageId='" + imageId + '\'' +
+                ", tenantId='" + tenantId + '\'' +
+                ", tenantName='" + tenantName + '\'' +
+                ", floatingIps=" + floatingIps +
                 '}';
     }
 

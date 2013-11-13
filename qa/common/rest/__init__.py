@@ -1,10 +1,16 @@
 """
+`urls` dictionary represents all relative URLs for sending requests mentioned in
+https://mirantis.jira.com/wiki/display/ASG/Aurora+REST+API.
+
 If you are going to rename some key make sure the logic of utils.get_list() method is still correct
 because the method was written following to the naming in this dictionary and keys in the REST responses
 to list requests.
 """
 
 urls = {
+    # LAB CONFIGURATION
+    'config': 'info/environment',
+    'services': 'openStackService/list',
     # AUTHENTICATION
     'login': 'auth/signIn',
     'logout': 'auth/signOut',
@@ -14,7 +20,7 @@ urls = {
     'datacenters': 'userState/getAllDataCenters',
     'get_user_state': 'userState/getCurrentUserState',
     # INSTANCES
-    'instances': '',
+    'instances': 'instance/list',
     'create_instance': 'instance/save',
     'show_instance': 'instance/show',
     'terminate_instances': 'instance/terminate',

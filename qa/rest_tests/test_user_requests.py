@@ -24,7 +24,8 @@ class TestUserRequests(RESTBaseTest):
 
         params = {
             'name': uname,
-            'email': uname + '@aurora.com'
+            'email': uname + '@aurora.com',
+            'tenant_id': self.auth.tenantId #users[-1]["tenantId"]
         }
         self.uhelper.create_user(params)
         new_user = [u for u in self.utils.get_list('users') if u['name'] == uname]
@@ -37,12 +38,12 @@ class TestUserRequests(RESTBaseTest):
         ok_(len(remaining) == 0, "'Delete user' failed.")
 
     def test_show_user(self):
-        created = self.uhelper.create_user()
+        created = self.uhelper.create_user(parameters={'tenant_id': self.auth.tenantId})
         shown = self.uhelper.show_user(created['id'])
         ok_(created == shown, "'Show user' failed. Expected: %s, Actual: %s." % (created, shown))
 
     def test_update_user(self):
-        created = self.uhelper.create_user()
+        created = self.uhelper.create_user(parameters={'tenant_id': self.auth.tenantId})
 
         new_name = created['name'] + '_updated'
         params = {

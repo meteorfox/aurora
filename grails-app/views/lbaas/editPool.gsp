@@ -1,54 +1,71 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
-    <title>Edit pool</title>
-</head>
-<body>
-<div class="body">
-    <h1>Edit pool</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:hasErrors bean="${cmd}">
-        <div class="errors">
-            <g:renderErrors bean="${cmd}" as="list"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="lbaas"/>
+    <meta name="menu-level-2" content="pools"/> 
+    <meta name="menu-level-3" content="Edit Pool"/> 
+    <title>Edit Pool</title>
+  </head>
+  <body>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="alert alert-info">${flash.message}</div>
+            </g:if>    
+            <g:hasErrors bean="${cmd}">
+              <div id="error_message" class="alert alert-error">
+                <g:renderErrors bean="${cmd}" as="list"/>
+              </div>
+            </g:hasErrors>
+          </div>
         </div>
-    </g:hasErrors>
 
-    <g:form method="post">
-        <input type="hidden" id="id" name="id" value="${params.id}"/>
-        <div class="dialog">
-            <table id="table_lbassEditPool">
-                <tr>
-                    <td><label for="name">Pool Name:</label></td>
-                    <td><g:textField type="text" id="name" name="name" value="${params.name}"/></td>
-                </tr>
-                <tr>
-                    <td><label for="enabled">Enabled:</label></td>
-                    <td><g:checkBox id="enabled" name="enabled" value="${params.enabled == 'true' || params.enabled == 'on'}"/></td>
-                </tr>
-                <tr>
-                    <td><label for="lbMethod">LB Method:</label></td>
-                    <td>
-                        <g:select id="lbMethod" name="lbMethod" from="${params.methods}" value="${params.lbMethod}"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="valignTop"><label for="monitors">Monitor:</label></td>
-                    <td>
-                        <g:each in="${params.allMonitors}" var="monitor">
-                            <g:checkBox id="monitors-${monitor}" name="monitors"
-                                  value="${monitor}" checked="${params.monitors?.contains(monitor)}"/>${monitor}<br>
-                        </g:each>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="buttons">
-            <g:buttonSubmit class="save" id="submit" value="Edit pool" action="updatePool" params="" title="Save changes"/>
-        </div>
-    </g:form>
-</div>
-</body>
+        <g:form method="post" class="form-horizontal fill-up">
+          <input type="hidden" id="id" name="id" value="${params.id}"/>
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Edit Pool</span>
+            </div>
+            <div class="box-content padded"> 
+              <div class="form-group">
+                <label class="control-label col-lg-2 required">Pool Name *</label>
+                <div class="col-lg-4">
+                  <g:textField type="text" id="name" name="name" value="${params.name}"/>
+                </div>  
+              </div>
+              <div class="form-group">
+                <label class="control-label col-lg-2">Enabled</label>
+                <div class="col-lg-4">
+                  <g:checkBox id="enabled" name="enabled" class="icheck"
+                              value="${params.enabled == 'true' || params.enabled == 'on'}"/>
+                </div>  
+              </div> 
+              <div class="form-group">
+                <label class="control-label col-lg-2">LB Method</label>
+                <div class="col-lg-4">
+                  <g:select id="lbMethod" name="lbMethod" from="${params.methods}" value="${params.lbMethod}"/>
+                </div>  
+              </div>    
+              <div class="form-group">
+                <label class="control-label col-lg-2">Monitor(s)</label>
+                <div class="col-lg-4">
+                  <g:each in="${params.allMonitors}" var="monitor">
+                    <g:checkBox id="monitors-${monitor}" class="icheck" name="monitors"
+                                value="${monitor}" 
+                                checked="${params.monitors?.contains(monitor)}"/><label class="control-label">${monitor}</label><br/>
+                  </g:each>
+                </div>  
+              </div> 
+              <div class="form-actions">
+                <g:buttonSubmit class="btn btn-green" id="submit" value="Save Changes" action="updatePool" params="" title="Save changes"/>
+              </div>
+            </div>
+          </div>
+        </g:form>
+      </div>
+    </div>
+  </body>
 </html>

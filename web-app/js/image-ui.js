@@ -27,7 +27,7 @@ function showPageUpdater() {
                         status = undefined;
                     }
                     if (status && !in_array(status, finalStatus)) {
-                        jQuery('#image_status_value').html(status + ' <img src="/images/spinner.gif"/>');
+                        jQuery('#image_status_value').html(status + HeaderUtils.getSpinner());
                     } else {
                         clearInterval(interval);
                         document.location = document.URL;

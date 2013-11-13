@@ -1,5 +1,6 @@
 package com.paypal.aurora
 
+import com.paypal.aurora.exception.RestClientRequestException
 import com.paypal.aurora.model.*
 
 class LbaasService {
@@ -16,8 +17,16 @@ class LbaasService {
         def resp = openStackRESTService.get(openStackRESTService.LBMS, addTenant('pools/'))
         List<Pool> result = []
         resp.tenantpools.pools.each {
-            result << ((it.respondsTo("name") && it.name) ||
-                    (it.respondsTo("get") && it.get("name")) ? new Pool(it) : getPool(it))
+            if ((it.respondsTo("name") && it.name) ||
+                    (it.respondsTo("get") && it.get("name"))) {
+                result << new Pool(it)
+            } else {
+                try {
+                    result << getPool(it)
+                } catch (RestClientRequestException e) {
+                    log.debug(e.getMessage(), e)
+                }
+            }
         }
         return result
     }
@@ -34,6 +43,11 @@ class LbaasService {
 
     def deletePool(String name) {
         openStackRESTService.delete(openStackRESTService.LBMS, addTenant("pools/$name"))
+    }
+
+    def deletePools(List<String> poolNames) {
+        def model = ServiceUtils.removeItems(this, "deletePool", poolNames)
+        return model
     }
 
     void createPool(def pool) {
@@ -84,6 +98,11 @@ class LbaasService {
         openStackRESTService.delete(openStackRESTService.LBMS, addTenant("vips/${name}"))
     }
 
+    def deleteVips(List<String> vipNames) {
+        def model = ServiceUtils.removeItems(this, "deleteVip", vipNames)
+        return model
+    }
+
     def getPolicies(def tenantName = null) {
         def resp = openStackRESTService.get(openStackRESTService.LBMS, addTenant('policies/', tenantName))
         def policies = []
@@ -112,6 +131,10 @@ class LbaasService {
         openStackRESTService.delete(openStackRESTService.LBMS, addTenant("policies/${policyName}", tenantName))
     }
 
+    def deletePolicies(List<String> policyNames, def tenantName = null) {
+        return ServiceUtils.removeItems(this, "deletePolicy", policyNames, [tenantName])
+    }
+
     List<Job> getJobs() {
         def jobs = []
         openStackRESTService.get(openStackRESTService.LBMS, addTenant('jobs')).Tenant_Job_Details.each { jobs << new Job(it) }
@@ -132,14 +155,8 @@ class LbaasService {
         List<String> result = []
         instanceIDs.each {
             Instance instance = instanceService.getById(it)
-            if (networkService.isUseExternalFLIP()) {
-                if (instance.floatingIps[0]) {
-                    result << instance.floatingIps[0].ip
-                }
-            } else {
-                instance.networks.find { it.pool == netInterface }.each { result << it.ip }
-                instance.floatingIps.find { it.pool == netInterface }.each { result << it.ip }
-            }
+            instance.networks.find { it.pool == netInterface }.each { result << it.ip }
+            instance.floatingIps.find { it.pool == netInterface }.each { result << it.ip }
         }
         return result
     }
@@ -153,10 +170,10 @@ class LbaasService {
 
     def addServices(List<String> instanceIDs, String poolName, String serviceName, String netInterface, String port, String weight, boolean enabled) {
         List<String> ips = getIPs(instanceIDs, netInterface)
-        addServices(poolName, serviceName, ips, port, weight, enabled ? 'true' : 'false')
+        addServiceIps(poolName, serviceName, ips, port, weight, enabled ? 'true' : 'false')
     }
 
-    private def addServices(String pool, String serviceName, List<String> ips, String port, String weight, String enabled) {
+    private def addServiceIps(String pool, String serviceName, List<String> ips, String port, String weight, String enabled) {
         def services = []
         ips.each { services << [name: serviceName ?: "$it:$port".toString(), ip: it, port: port, weight: weight, enabled: enabled] }
         postServices([pool: [[
@@ -165,21 +182,16 @@ class LbaasService {
         ]]])
     }
 
-    def deleteServices(List<String> ips) {
-        def resp = []
-        getAllPools().each { pool ->
-            List<LBService> services = getServices(pool.name).findAll({ it.ip in ips })
-            services.each { service -> resp << deleteService(pool.name, service.name) }
-        }
-        return resp
-    }
-
     private def postServices(def services) {
         openStackRESTService.post(openStackRESTService.LBMS, addTenant('pools'), services)
     }
 
-    def deleteService(String pool, String service) {
+    def deleteService(String service, String pool) {
         openStackRESTService.delete(openStackRESTService.LBMS, addTenant("pools/$pool/services/$service"))
+    }
+
+    def deleteServices(List<String> services, String pool) {
+        return ServiceUtils.removeItems(this, "deleteService", services, [pool])
     }
 
     void changeEnabled(String pool, List<String> serviceNames, boolean enabled) {
@@ -187,7 +199,7 @@ class LbaasService {
         List<LBService> changedServices = poolServices.findAll({ it.name in serviceNames })
         def services = []
         changedServices.each {
-          services << [name: it.name, ip: it.ip, port: it.port, weight: it.weight, enabled: enabled.toString()]
+            services << [name: it.name, ip: it.ip, port: it.port, weight: it.weight, enabled: enabled.toString()]
         }
         postServices([pool: [[
                 name: pool,

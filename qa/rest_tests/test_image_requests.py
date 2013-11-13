@@ -24,6 +24,14 @@ class TestImageRequests(RESTBaseTest):
         # after each test-case: remove image that was created
         self.utils.cleanup_objects(self.ihelper.delete_image, 'images')
 
+    def test_create_delete_image(self):
+        # create image
+        image = self.ihelper.create_image()
+        ok_(image is not False, 'Image creation failed.')  # create_image verifies if the image appeared in the list.
+        # delete image
+        ok_(self.ihelper.delete_image(image['id']),
+            'Image deleting failed. Image with id=%s still exists.' % image['id'])
+
     def test_list_of_images(self):
         ims = self.utils.get_list('images')
         # if get_list returned value then it is JSON object (data validated inside of get_list).
@@ -46,14 +54,6 @@ class TestImageRequests(RESTBaseTest):
         updated = self.ihelper.update_image(params)
         ok_(updated['name'] == new_name,
             'Image renaming failed. Expected name: %s. Actual: %s' % (new_name, updated['name']))
-
-    def test_create_delete_image(self):
-        # create image
-        image = self.ihelper.create_image()
-        ok_(image is not False, 'Image creation failed.')  # create_image verifies if the image appeared in the list.
-        # delete image
-        ok_(self.ihelper.delete_image(image['id']),
-            'Image deleting failed. Image with id=%s still exists.' % image['id'])
 
 if __name__ == '__main__':
     t = TestImageRequests()

@@ -34,7 +34,7 @@
     <div class="outer">
       <h1><g:exclaim/></h1>
       <h2><g:excuse/></h2>
-      <g:failureImage/>
+      <g:failureImage rootContextPath="${resource(dir: '')}"/>
       <div class="message">
         <strong>Error ${request.'javax.servlet.error.status_code'}:</strong> ${request.'javax.servlet.error.message'.encodeAsHTML()}<br/>
         <strong>Servlet:</strong> ${request.'javax.servlet.error.servlet_name'}<br/>

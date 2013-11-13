@@ -1,13 +1,13 @@
 package com.paypal.aurora
 
-import static org.apache.commons.lang.StringUtils.isNotEmpty
-
 import com.paypal.aurora.exception.RestClientRequestException
 import com.paypal.aurora.model.*
 import com.paypal.aurora.util.ConstraintsProcessor
 import grails.converters.JSON
 import grails.converters.XML
 import org.apache.shiro.grails.annotations.RoleRequired
+
+import static org.apache.commons.lang.StringUtils.isNotEmpty
 
 class NetworkController {
 
@@ -44,7 +44,8 @@ class NetworkController {
                 xml { new XML(details).render(response) }
                 json { new JSON(details).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error, flash: [message: error]]
             withFormat {
@@ -58,29 +59,14 @@ class NetworkController {
     @RoleRequired('admin')
     def delete = {
         List<String> networkIds = Requests.ensureList(params.selectedNetworks ?: params.networkId)
-        def deleted = []
-        def not_deleted = []
-        def errors = [:]
-        for (id in networkIds) {
-            try{
-                quantumService.deleteNetwork(id)
-                deleted << id
-            }catch (RestClientRequestException e){
-                def error = ExceptionUtils.getExceptionMessage(e)
-                not_deleted << id
-                errors[id] = error
-            }
-        }
-
-        def model = [deleted : deleted, not_deleted: not_deleted, errors : errors]
-
+        def model = quantumService.deleteNetworks(networkIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete network with id: ",
+                model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
             html{
                 redirect(action : 'list');
-                if (not_deleted) {
-                    def ids = not_deleted.join(',')
-                    flash.message = "Could not delete network with id: ${ids}"
-                }
+                flash.message = flashMessage
             }
             xml {new XML(model).render(response)}
             json {new JSON(model).render(response)}
@@ -91,7 +77,7 @@ class NetworkController {
 
 
     def show = {
-        try{
+        try {
             String id = params.id;
             Network network = quantumService.getNetworkById(id)
             List<Port> ports = quantumService.getPortsByNetworkId(id)
@@ -101,7 +87,8 @@ class NetworkController {
                 xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
             }
-        }catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -116,7 +103,7 @@ class NetworkController {
     }
 
     def showSubnet = {
-        try{
+        try {
             String id = params.id;
             Subnet subnet = quantumService.getSubnetById(id)
             def model = [subnet : subnet]
@@ -125,7 +112,8 @@ class NetworkController {
                 xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
             }
-        } catch (RestClientRequestException e){
+        } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -150,6 +138,7 @@ class NetworkController {
                 json { new JSON(model).render(response) }
             }
         } catch(RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -208,11 +197,12 @@ class NetworkController {
                 def model = quantumService.createSubnet(subnet)
 
                 withFormat {
-                    html {redirect(action: 'show', params: [id: params.networkId])}
+                    html {chain(action: 'show', params: [id: params.networkId])}
                     xml {new XML(model).render(response)}
                     json {new JSON(model).render(response)}
                 }
             } catch (RestClientRequestException e){
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -272,6 +262,7 @@ class NetworkController {
                     json {new JSON(model).render(response)}
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -288,34 +279,12 @@ class NetworkController {
 
     def deleteSubnet = {
         List<String> subnetIds = Requests.ensureList(params.selectedSubnets ?: params.subnetId)
-        def deleted = []
-        def not_deleted = []
-        def errors = [:]
-
-        for (id in subnetIds){
-            try{
-                quantumService.deleteSubnet(id)
-                deleted << id
-            }catch(RestClientRequestException e){
-                def error = ExceptionUtils.getExceptionMessage(e)
-                not_deleted << id
-                errors[id] = error
-            }
-        }
-
-        if (not_deleted) {
-            def ids = not_deleted.join(',')
-            flash.message = "Could not delete subnet with id: ${ids}"
-        }
-
-        def model = [deleted : deleted, not_deleted : not_deleted, errors : errors]
-
+        def model = quantumService.deleteSubnets(subnetIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete subnet with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
             html {
-                if (not_deleted) {
-                    def ids = not_deleted.join(',')
-                    flash.message = "Could not delete subnet with id: ${ids}"
-                }
+                flash.message = flashMessage
                 redirect(action: 'show', params: [id: params.networkId])
             }
             xml {new XML(model).render(response)}
@@ -325,29 +294,12 @@ class NetworkController {
 
     def deletePort = {
         List<String> portIds = Requests.ensureList(params.selectedPorts ?: params.portId)
-        def deleted = []
-        def not_deleted = []
-        def errors = [:]
-
-        for (id in portIds) {
-            try{
-                quantumService.deletePort(id)
-                deleted << id
-            } catch (RestClientRequestException e){
-                def error = ExceptionUtils.getExceptionMessage(e)
-                not_deleted << id
-                errors[id] = error
-            }
-        }
-
-        def model = [deleted : deleted, not_deleted: not_deleted, errors : errors]
-
+        def model = quantumService.deletePorts(portIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete port with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
             html{
-                if (not_deleted) {
-                    def ids = not_deleted.join(',')
-                    flash.message = "Could not delete port with id: ${ids}"
-                }
+                flash.message = flashMessage
                 redirect(action : 'show', params: [id : params.networkId])
             }
             xml {new XML(model).render(response)}
@@ -370,6 +322,7 @@ class NetworkController {
                 json {new JSON(model).render(response)}
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -395,6 +348,7 @@ class NetworkController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -423,6 +377,7 @@ class NetworkController {
                 json {new JSON(model).render(response)}
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -454,6 +409,7 @@ class NetworkController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -493,6 +449,7 @@ class NetworkController {
                     json {new JSON(resp).render(response)}
                 }
             } catch (RestClientRequestException e){
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -518,6 +475,7 @@ class NetworkController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -556,6 +514,7 @@ class NetworkController {
                     json {new JSON(model).render(response)}
                 }
             } catch (RestClientRequestException e){
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -625,6 +584,7 @@ class NetworkController {
                 json { new JSON(floatingIps).render(response) }
             }
         }catch(RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -646,6 +606,7 @@ class NetworkController {
                 json {new JSON(model).render(response)}
             }
         } catch(RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -676,6 +637,7 @@ class NetworkController {
                 json {new JSON(model).render(response)}
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -746,6 +708,7 @@ class NetworkController {
                 json {new JSON(model).render(response)}
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             def redirectMap
@@ -821,6 +784,7 @@ class NetworkController {
                 json { new JSON(resp).render(response) }
             }
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors : error]
             withFormat {
@@ -842,7 +806,7 @@ class NetworkController {
             def model = cmd.errors
             withFormat {
                 html {
-                    redirect(action: 'allocateFloatingIp', model: [cmd: cmd], params: chainParams)
+                    chain(action: 'allocateFloatingIp', model: [cmd: cmd], params: chainParams)
                 }
                 xml {new XML(model).render(response)}
                 json {new JSON(model).render(response)}
@@ -853,13 +817,17 @@ class NetworkController {
                 redirectParams = [url: params.parent]
             }
             try {
-                def resp = networkService.allocateFloatingIp(params.pool, params.hostname, params.zone)
+                boolean FQDNenabled = false
+                if (params.containsKey('enabled'))
+                    FQDNenabled = params.enabled == 'on'
+                def resp = networkService.allocateFloatingIp(params.pool, params.hostname, params.zone, FQDNenabled)
                 withFormat {
                     html { redirect(redirectParams) }
                     xml { new XML(resp).render(response) }
                     json { new JSON(resp).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {

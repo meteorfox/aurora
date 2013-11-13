@@ -1,9 +1,11 @@
 package com.paypal.aurora
 
 import com.paypal.aurora.exception.QuantumDNSException
+import org.codehaus.groovy.grails.validation.routines.InetAddressValidator
 
 class QuantumDNSService {
     def openStackRESTService
+    def sessionStorageService
 
     boolean isEnabled() {
         openStackRESTService.isServiceEnabled(OpenStackRESTService.DNS)
@@ -17,13 +19,28 @@ class QuantumDNSService {
         openStackRESTService.post(OpenStackRESTService.DNS, (ppp?'ppp.':'') + zone + '/action/delete', getJsonBody(host, ip, zone, ppp))
     }
 
-    def deleteDnsRecordByIP(String ip, String zone, boolean ppp = false) {
+    def deleteDnsRecordByIP(String ip, boolean ppp = false) {
         String fqdn = getFqdnByIp(ip)
-        if (fqdn.endsWith(zone)) {
-            String host = fqdn.substring(0, fqdn.size() - zone.size() - 1)
-            deleteDnsRecord(host, ip, zone)
+        if (!fqdn) {
+            return
+        }
+        if (fqdn.endsWith(".")) {
+            fqdn = fqdn.substring(0, fqdn.size()-1)
+        }
+        String [] zones = sessionStorageService.tenant.zones
+        String host = null
+        String currentZone;
+        for (String zone : zones) {
+            if (fqdn.endsWith(zone)) {
+                host = fqdn.substring(0, fqdn.size() - zone.size() - 1)
+                currentZone = zone;
+                break
+            }
+        }
+        if (host != null) {
+            deleteDnsRecord(host, ip, currentZone, ppp)
         } else {
-            String message = "Can not delete $ip from UDNS service. FQDN: $fqdn , but zone: $zone"
+            String message = "Can not delete $ip from UDNS service. FQDN: $fqdn , but zones: $zones"
             log.error(message)
             throw new QuantumDNSException(message)
         }
@@ -52,6 +69,9 @@ class QuantumDNSService {
     }
 
     String getFqdnByIp(String ip) {
+        if (!InetAddressValidator.getInstance().isValidInet4Address(ip)) {
+            return "";
+        }
         String [] splitedIp = ip.split('\\.')
         String zone = "${splitedIp[1]}.${splitedIp[0]}.in-addr.arpa"
         String octet = splitedIp[3] + '.' + splitedIp[2]

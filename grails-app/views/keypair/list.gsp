@@ -1,43 +1,62 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="security"/> 
+    <meta name="menu-level-2" content="keypairs"/> 
     <title>Keypairs</title>
-</head>
+  </head>
 
-<body>
-<div class="body">
-    <h1>Keypairs</h1>
-    <g:if test="${flash.message}">
-        <div class="message">${flash.message}</div>
-    </g:if>
-    <g:form method="post" class="validate">
-        <div class="list">
-            <div class="buttons">
-                <g:link elementId="create" class="create" action="create" title="Create new keypair">Create New Keypair</g:link>
-                <g:link elementId="insert" class="create" action="insert" title="Import existing public key">Import Keypair</g:link>
+  <body>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="message alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
+        </div>
+        <g:form method="post" class="validate">
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Keypairs</span>
+              <ul class="box-toolbar">
+                <li><g:link elementId="create" class="btn btn-xs btn-green" action="create" 
+                            title="Create new keypair">Create New Keypair</g:link></li>
+                <li><g:link elementId="insert" class="btn btn-xs btn-green" action="insert" 
+                            title="Import existing public key">Import Keypair</g:link></li>
                 <g:if test="${keypairs}">
-                    <g:buttonSubmit id="delete" class="delete" value="Remove Keypair(s)" action="delete"
-                                    data-warning="Really remove keypair(s)?" title="Remove selected keypair(s)"/>
+                  <li><g:buttonSubmit class="btn btn-xs btn-red delete" id="delete" 
+                                      value="Remove Keypair(s)" action="delete"
+                                      data-warning="Really remove keypair(s)?" 
+                                      title="Remove selected keypair(s)"/></li>
                 </g:if>
-            </div>
-            <table id="table_keypairList" class="sortable instanceType">
+              </ul>
+            </div>          
+            <div class="box-content">
+
+              <table id="table_keypairList" class="table table-normal sortable filtered">
                 <tr>
-                    <th class="checkboxTd">&thinsp;x</th>
-                    <th>Name</th>
-                    <th class="sorttable_nosort">Fingerprint</th>
+                  <td class="checkboxTd">&thinsp;x</td>
+                  <td>Name</td>
+                  <td class="sorttable_nosort">Fingerprint</td>
                 </tr>
                 <g:each in="${keypairs}" var="keypair">
-                    <tr>
-                        <td><g:if test="${keypair.name}"><g:checkBox id="checkBox_${keypair.name}" name="selectedKeypairs" value="${keypair.name}"
-                                                                     checked="0" class="requireLogin"/></g:if></td>
-                        <td>${keypair.name}</td>
-                        <td>${keypair.fingerprint}</td>
-                    </tr>
+                  <tr>
+                    <td><g:if test="${keypair.name}">
+                    <g:checkBox id="checkBox_${keypair.name}" 
+                                name="selectedKeypairs" value="${keypair.name}"
+                                checked="0" class="requireLogin"/></g:if></td>
+                  <td>${keypair.name}</td>
+                  <td>${keypair.fingerprint}</td>
+                  </tr>
                 </g:each>
-            </table>
-        </div>
-    </g:form>
-</div>
-</body>
+              </table>
+            </div>
+          </div>
+        </g:form>
+      </div>
+    </div>
+  </body>
 </html>

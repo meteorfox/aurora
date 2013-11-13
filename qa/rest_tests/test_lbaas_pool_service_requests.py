@@ -14,7 +14,7 @@ class TestPoolServiceRequests(RESTBaseTest):
         # create instance - its network will be used to create pools and itself will be used to create services.
         cls.instance = cls.ihelper.create_instance()
         ok_(cls.instance, "Unable to create instance. Pools creation will fail in the following test-cases.")
-        cls.net_interface = cls.instance['networks'].keys()[0]
+        cls.net_interface = cls.instance['networks'].keys()[0] if isinstance(cls.instance['networks'], dict) else cls.instance['networks'][0].keys()
 
     @classmethod
     def teardown_class(cls):
@@ -48,13 +48,22 @@ class TestPoolServiceRequests(RESTBaseTest):
         ok_(shown['pool']['name'] == created['name'], 'Unable to show LBaaS pool.')
 
     def test_create_delete_service(self):
-        ip = self.instance['networks'][self.net_interface]
-        pool = self.phelper.create_pool({'netInterface': self.net_interface})
+        network = self.instance['networks']
+        if isinstance(network, list):
+            network_interface = network[0]["pool"]
+            ip = network[0]["ip"]
+        elif isinstance(network, dict):
+            network_interface = network[self.net_interface]
+            ip = network["ip"]
+        #ip = self.instance['networks'][self.net_interface]
+        #pool = self.phelper.create_pool({'netInterface': self.net_interface})
+        pool = self.phelper.create_pool({'netInterface': network_interface})
         # create service for the pool
         sparams = {
             'id': pool['name'],
             'instanceId': self.instance['instanceId'],
-            'netInterface': self.net_interface
+            #'netInterface': self.net_interface,
+            'netInterface': network_interface,
         }
         service = self.phelper.create_service(sparams)
         new_services = [s for s in self.phelper.show_pool(pool['name'])['services'] if s['ip'] == ip]
@@ -65,12 +74,20 @@ class TestPoolServiceRequests(RESTBaseTest):
         ok_(self.phelper.delete_service(del_params), 'Unable to delete BLaaS pool service.')
 
     def test_enable_disable_service(self):
-        pool = self.phelper.create_pool({'netInterface': self.net_interface})
+        network = self.instance['networks']
+        if isinstance(network, list):
+            network_interface = network[0]["pool"]
+            ip = network[0]["ip"]
+        elif isinstance(network, dict):
+            network_interface = network[self.net_interface]
+            ip = network["ip"]
+        pool = self.phelper.create_pool({'netInterface': network_interface})
+        #pool = self.phelper.create_pool({'netInterface': self.net_interface})
         # create service for the pool
         sparams = {
             'id': pool['name'],
             'instanceId': self.instance['instanceId'],
-            'netInterface': self.net_interface
+            'netInterface': network_interface,
         }
         service = self.phelper.create_service(sparams)
 
@@ -79,9 +96,15 @@ class TestPoolServiceRequests(RESTBaseTest):
             'pool': pool['name'],
             'selectedServices': service['name']
         }
-        ok_(self.phelper.enable_service(enable_disable_params), '"Enable service" failed.')
+        self.phelper.enable_service(enable_disable_params)
+        ok_([s for s in self.phelper.show_pool(pool['name'])['services']
+             if s['name'] == service['name']][0]['enabled'] == 'true', '"Enable service" failed.')
+        self.phelper.disable_service(enable_disable_params)
+        ok_([s for s in self.phelper.show_pool(pool['name'])['services']
+             if s['name'] == service['name']][0]['enabled'] == 'false', '"Enable service" failed.')
+        #ok_(self.phelper.enable_service(enable_disable_params), '"Enable service" failed.')
         # disable service
-        ok_(self.phelper.disable_service(enable_disable_params), '"Disable service" failed.')
+        #ok_(self.phelper.disable_service(enable_disable_params), '"Disable service" failed.')
 
 if __name__ == '__main__':
     t = TestPoolServiceRequests()

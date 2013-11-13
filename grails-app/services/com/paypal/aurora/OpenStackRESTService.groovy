@@ -1,8 +1,8 @@
 package com.paypal.aurora
 
 import com.paypal.aurora.auth.UserLoginToken
-import com.paypal.aurora.exception.LbaasException
 import com.paypal.aurora.exception.RestClientRequestException
+import com.paypal.aurora.model.DataCenter
 import com.paypal.aurora.model.OpenStackService
 import com.paypal.aurora.model.Tenant
 import com.paypal.aurora.model.UserState
@@ -24,6 +24,7 @@ import java.security.cert.X509Certificate
 class OpenStackRESTService {
 
     static transactional = false
+    static final Integer CONNECTION_TIMEOUT_MILLIS = 45000
     static final String NOVA = 'compute'
     static final String NOVA_VOLUME = 'volume'
     static final String GLANCE = 'image'
@@ -33,6 +34,7 @@ class OpenStackRESTService {
     static final String QUANTUM = 'network'
     static final String PSERV = 'pserv'
     static final String DNS = 'dns'
+    static final String METERING = 'metering'
     static final String TEXT_PLAIN = 'text/plain'
     static final String APPLICATION_JSON = 'application/json'
     static final def ADDITIONAL_HEADERS = [(NOVA_VOLUME): ['User-Agent': 'python-cinderclient']]
@@ -48,24 +50,8 @@ class OpenStackRESTService {
                     }
             ]
     ]
-
-    def grailsApplication
-
-    def haveAvailableDatacenters
-    def environmentError
-    def authErrors
-
     def sessionStorageService
-
-    def getCode(Exception e) {
-        def code
-        try {
-            code = e.statusCode;
-        } catch (Exception er) {
-            code = null;
-        }
-        return code;
-    }
+    def configService
 
     void setProxy(def proxy) {
         if (proxy) {
@@ -81,143 +67,90 @@ class OpenStackRESTService {
     }
 
     void login(UserLoginToken userLoginToken) {
-        def environment = grailsApplication.config.properties.environments.find {
-            it.name == userLoginToken.environment
-        }
+        def environment = configService.getEnvironmentByName(userLoginToken.environment)
+        if (environment) {
+            environment.initMap()
+            sessionStorageService.environment = environment
+            sessionStorageService.userName = userLoginToken.username
+            log.debug "Log in environment '$environment'"
+            for (DataCenter dataCenter in environment.datacenters) {
+                setProxy(dataCenter.proxy)
+                RESTClient client = makeClient(dataCenter.keystone)
 
-        environmentError = false
+                try {
+                    dataCenter.tokenId = getTokenId(client, userLoginToken.principal, userLoginToken.credentials.toString())
+                } catch (Exception e) {
+                    dataCenter.error = ExceptionUtils.getExceptionMessage(e)
+                    log.info(e)
+                }
 
-        if (!environment) {
-            haveAvailableDatacenters = false
-            environmentError = true
-            return
-        }
-
-        sessionStorageService.setCurrentEnv(environment)
-        sessionStorageService.setCustomServices(environment.datacenters.customservices)
-        sessionStorageService.setUser(userLoginToken.username)
-        log.info("Environment = ${environment}")
-        def datacenters = environment.get("datacenters")
-        if (!datacenters) {
-            haveAvailableDatacenters = false
-            environmentError = true
-            return
-        }
-        def updateSessionAttributes = true
-        authErrors = false
-
-        datacenters.each() {
-            setProxy(it.proxy)
-            RESTClient client = new RESTClient(it.keystone)
-
-            def tokenId
-
-            it.error = null
-
-
-            try {
-                tokenId = getTokenId(client, userLoginToken.principal, userLoginToken.credentials.toString())
-            } catch (Exception e) {
-                def errorMessage = e.getMessage()
-                if (e instanceof UnknownHostException)
-                    errorMessage = 'Unknown host ' + errorMessage
-                if (it.name[0] != '?')
-                    it.name = "?" + it.name
-                it.error = errorMessage
-                def code = getCode(e);
-                it.statusCode = code
-                if (code == 401)
-                    authErrors = true
-
-                log.info(e)
+                if (dataCenter.tokenId) {
+                    dataCenter.customservices.each {
+                        if (!it.disabled && it.user) {
+                            try {
+                                it.tokenId = getTokenId(client, it.user, it.password, it.tenant)
+                            } catch (Exception e) {
+                                log.error "Can't login for service $it.type"
+                                it.disabled = true
+                            }
+                        }
+                    }
+                    client.setHeaders('X-Auth-Token': dataCenter.tokenId)
+                    dataCenter.tenants = getTenants(client)
+                    changeTenant(client, dataCenter, findDefaultTenantId(dataCenter.tenants, userLoginToken.username))
+                }
             }
-
-            sessionStorageService.setDataCenter(it.name, it)
-
-            if (!tokenId) {
-                return
-            }
-
-
-            client.setHeaders('X-Auth-Token': tokenId)
-
-            it.tokenId = tokenId
-
-            if (updateSessionAttributes) {
-                client.setHeaders('X-Auth-Token': tokenId)
-                def tenants = collectTenants(client)
-                sessionStorageService.setTenants(tenants)
-                updateServices(client, it, findDefaultTenantId(userLoginToken.username), updateSessionAttributes)
-                updateSessionAttributes = false
+            for (DataCenter dataCenter in environment.datacenters) {
+                if (dataCenter.tokenId) {
+                    sessionStorageService.dataCenterName = dataCenter.name
+                    break
+                }
             }
         }
-
-        def goodDataCenter = sessionStorageService.getDataCentersMap().values()
-                .find { it.error == null }
-
-        if (goodDataCenter) {
-            setProxy(goodDataCenter.proxy)
-            haveAvailableDatacenters = true
-        } else {
-            haveAvailableDatacenters = false
-        }
-
     }
 
-    def private findDefaultTenantId(String userName) {
-        def tenants = sessionStorageService.tenants
-        def tenant = tenants.find {
+    private String findDefaultTenantId(List<Tenant> tenants, String userName) {
+        Tenant tenant = tenants.find {
             it.name == userName
         }
         return tenant ? tenant.id : tenants.last().id
     }
 
-    def private static getTokenId(RESTClient client, def user, def password) {
+    private static String getTokenId(RESTClient client, String user, String password, String tenantName = null) {
         def body = ['auth': ['passwordCredentials': ['username': user, 'password': password]]]
+        if (tenantName) {
+            body.auth.tenantName = tenantName
+        }
         def resp = client.post(path: 'tokens', body: body, requestContentType: ContentType.APPLICATION_JSON.mimeType)
 
         resp.data.access.token.id
     }
 
-    def private updateTenants(RESTClient client, def tokenId) {
-        client.setHeaders('X-Auth-Token': tokenId)
-        sessionStorageService.setTenants(collectTenants(client))
-    }
-
-    def private static collectTenants(RESTClient client) {
+    private static List<Tenant> getTenants(RESTClient client) {
         def resp = client.get(path: 'tenants')
 
         def tenants = []
         for (tenant in resp.data.tenants) {
             tenants << new Tenant(tenant)
         }
-        tenants
+        return tenants
     }
 
-    def private updateServices(RESTClient client, def dataCenter, def tenantId, def updateSessionAttributes) {
+    def private changeTenant(RESTClient client, DataCenter dataCenter, String tenantId) {
         def body = ['auth': ['token': ['id': dataCenter.tokenId], 'tenantId': tenantId]]
         def resp = client.post(path: 'tokens', body: body, requestContentType: ContentType.APPLICATION_JSON.mimeType)
 
         dataCenter.tokenId = resp.data.access.token.id
-
-        if (updateSessionAttributes) {
-            def services = [:]
-
-            for (service in resp.data.access.serviceCatalog) {
-                services.put(service.type, new OpenStackService(service.name, service.type, service.endpoints[0].publicURL, service.endpoints[0].adminURL))
+        dataCenter.initMap()
+        // merge custom services with services from keystone
+        for (service in resp.data.access.serviceCatalog) {
+            if (!dataCenter.serviceMap.get(service.type)) {
+                dataCenter.serviceMap.put(service.type, new OpenStackService(service.name, service.type, service.endpoints[0].publicURL, service.endpoints[0].adminURL))
             }
-
-            dataCenter.customservices.each {
-                String adminUri = it.adminUri ?: it.uri
-                services.put(it.type, new OpenStackService(it.name, it.type, it.uri, adminUri, it.user, it.password, it.tenant, it.disabled ? true : false))
-            }
-
-            sessionStorageService.setTokenId(resp.data.access.token.id)
-            sessionStorageService.setTenant(resp.data.access.token.tenant)
-            sessionStorageService.setDataCenterName(dataCenter.name)
-            sessionStorageService.setServices(services)
-            sessionStorageService.setRoles(resp.data.access.user.roles.name)
         }
+
+        dataCenter.tenant = resp.data.access.token.tenant.name
+        dataCenter.roles = resp.data.access.user.roles.name
     }
 
     def private disableVerify(RESTClient client) {
@@ -243,27 +176,21 @@ class OpenStackRESTService {
         client.client.connectionManager.schemeRegistry.register(new Scheme('https', ssf, 443))
     }
 
-    def changeUserState(def dataCenterName, def tenantId) {
+    UserState changeUserState(String dataCenterName, String tenantId) {
+        DataCenter dataCenter = sessionStorageService.environment.dataCenterMap[dataCenterName]
 
-        def dataCenter = sessionStorageService.getDataCenter(dataCenterName)
-
-        if (!dataCenter.tokenId) {
-            def message = datacenterError[dataCenterName]
-            def String name = dataCenterName
-            throw new AuthenticationException("Cannot access ${name} because ${message}")
+        if (!dataCenter) {
+            throw new AuthenticationException("Cannot access to ${dataCenterName}")
         }
-
-        RESTClient client = new RESTClient(dataCenter.keystone)
 
         if (dataCenterName != sessionStorageService.dataCenterName) {
             setProxy(dataCenter.proxy)
-            updateTenants(client, dataCenter.tokenId)
-            updateServices(client, dataCenter, sessionStorageService.tenants.last().id, true)
+            sessionStorageService.dataCenterName = dataCenterName
         } else {
-            updateServices(client, dataCenter, tenantId, true)
-            updateTenants(client, sessionStorageService.getTokenId())
+            RESTClient client = makeClient(dataCenter.keystone)
+            changeTenant(client, dataCenter, tenantId)
         }
-        new UserState(sessionStorageService.dataCenterName, sessionStorageService.tenant.id)
+        return new UserState(sessionStorageService.dataCenterName, sessionStorageService.tenant.id)
     }
 
     def getContentType(def contentType) {
@@ -272,8 +199,12 @@ class OpenStackRESTService {
         return ContentType.APPLICATION_JSON.mimeType
     }
 
-    def makeClient(def host, def customParser) {
+    def makeClient(def host, def customParser = null) {
         RESTClient client = new RESTClient(host + '/')
+
+        client.getClient().getParams().setParameter("http.connection.timeout", CONNECTION_TIMEOUT_MILLIS)
+        client.getClient().getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_MILLIS)
+
         if (customParser) {
             def header = customParser.header
             def body = customParser.body
@@ -281,6 +212,7 @@ class OpenStackRESTService {
             if (responseParser)
                 client.parser."${header}" = responseParser
         }
+
         disableVerify(client)
         return client
     }
@@ -290,28 +222,17 @@ class OpenStackRESTService {
             return [:]
         }
 
-        def service = sessionStorageService.services[serviceName]
+        OpenStackService service = sessionStorageService.services[serviceName]
 
-        def authToken = null
-        if (service.tokenId) {
-            authToken = service.tokenId
-        } else {
-            if (service.user) {
-                authToken = getTokenId(service)
-            }
-        }
+        def authToken = service.tokenId ?: sessionStorageService.tokenId
 
-        String host = service.publicURL
-        if (SecurityUtils.subject.hasRole(Constant.ROLE_ADMIN) && service.adminURL) {
-            host = service.adminURL
+        String host = service.uri
+        if (SecurityUtils.subject.hasRole(Constant.ROLE_ADMIN) && service.adminUri) {
+            host = service.adminUri
         }
 
         RESTClient client = makeClient(host, customParser)
 
-        if (!authToken) {
-            authToken = sessionStorageService.getTokenId()
-        }
-        service.tokenId = authToken
         def headers = ['X-Auth-Token': authToken]
 
         if (ADDITIONAL_HEADERS.get(serviceName)) {
@@ -331,32 +252,6 @@ class OpenStackRESTService {
         } catch (Exception e) {
             throw new RestClientRequestException(e.getMessage() + " '" + host + path + "'", e)
         }
-    }
-
-    def getTokenId(def service) {
-        String host = sessionStorageService.getDataCenter(sessionStorageService.getDataCenterName()).keystone
-        RESTClient client = new RESTClient(host + '/')
-
-        def tokenId = getTokenId(client, service.user, service.password)
-
-        client.setHeaders('X-Auth-Token': tokenId)
-        def tenants = collectTenants(client)
-
-        def tenantName = service.tenant ?: service.name
-
-        def tenant = tenants.find { it.name == tenantName }
-
-        if (tenant == null) {
-            throw new LbaasException("LBAAS: Tenant id not found during authentication")
-        }
-
-        def body = ['auth': ['project': 'lbaas',
-                'passwordCredentials': [
-                        'username': service.user,
-                        'password': service.password],
-                'tenantId': tenant.id]]
-        def resp = client.post(path: 'tokens', body: body, requestContentType: ContentType.APPLICATION_JSON.mimeType)
-        resp.data.access.token.id
     }
 
     def get(String service, String path, def query = null, def contentType = null, def customParser = null) {

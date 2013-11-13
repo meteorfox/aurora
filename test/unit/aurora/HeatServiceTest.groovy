@@ -2,8 +2,8 @@ package aurora
 
 import com.paypal.aurora.HeatService
 import com.paypal.aurora.OpenStackRESTService
-import com.paypal.aurora.SessionStorageService
 import com.paypal.aurora.model.RestResponse
+import com.paypal.aurora.model.SessionStorage
 import com.paypal.aurora.model.Stack
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
@@ -19,7 +19,6 @@ class HeatServiceTest extends GMockTestCase {
     static final stack1 = [id: 'id1', stack_name: 'name1']
     static final stack2 = [id: 'id2', stack_name: 'name2']
 
-    static final Integer templateInd = 345
     static final stackName = "newName"
     static final template = '{JSON template description}'
     static final createParams = [DBPassword: 'pwd', DBRootPassword: 'pws', DBUsername: 'user', LinuxDistribution: 'distro', DBName: 'db', KeyName: 'key', InstanceType: 't1.micro']
@@ -50,7 +49,7 @@ class HeatServiceTest extends GMockTestCase {
         service.openStackRESTService = openStackRESTService
         service.openStackRESTService.HEAT.returns(HEAT).stub()
 
-        SessionStorageService sessionStorageService = mock(SessionStorageService)
+        SessionStorage sessionStorageService = mock(SessionStorage)
         service.sessionStorageService = sessionStorageService
     }
 
@@ -84,10 +83,8 @@ class HeatServiceTest extends GMockTestCase {
                 timeout_mins: 60,
                 parameters: createParams]).returns(CreatedResponse).stub()
 
-        service.sessionStorageService.getExpiringVar(templateInd).returns(template).stub()
-
         play {
-            assertEquals(CreatedResponse, service.createStack(templateInd, stackName, createParams))
+            assertEquals(CreatedResponse, service.createStack(template, stackName, createParams))
         }
     }
 

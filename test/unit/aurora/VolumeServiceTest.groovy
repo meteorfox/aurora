@@ -2,8 +2,8 @@ package aurora
 
 import com.paypal.aurora.InstanceService
 import com.paypal.aurora.OpenStackRESTService
-import com.paypal.aurora.VolumeService
 import com.paypal.aurora.QuotaService
+import com.paypal.aurora.VolumeService
 import com.paypal.aurora.exception.RestClientRequestException
 import com.paypal.aurora.model.Instance
 import com.paypal.aurora.model.Quota
@@ -82,6 +82,7 @@ class VolumeServiceTest extends GMockTestCase {
     final static volumeType2 = [id: 'volumeTypeId2', name: 'volumeTypeName2', extra_specs: [:]]
 
     def volumeWithInstance
+    def volumeWithoutInstance
 
 
 
@@ -99,13 +100,14 @@ class VolumeServiceTest extends GMockTestCase {
         volumeWithInstance = new Volume(volume1)
         volumeWithInstance.instanceName = instance1.name
 
+        volumeWithoutInstance = new Volume(volume1)
     }
 
     def testGetAllVolumes() {
         service.openStackRESTService.get(NOVA_VOLUME, "volumes/detail").returns([volumes: [volume1, volume2]]).stub()
         service.instanceService.getById('instanceId1', false).returns(new Instance(instance1)).stub()
         play {
-            assertEquals([volumeWithInstance, new Volume(volume2)], service.getAllVolumes())
+            assertEquals([volumeWithoutInstance, new Volume(volume2)], service.getAllVolumes())
         }
     }
 

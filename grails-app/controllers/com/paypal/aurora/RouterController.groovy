@@ -1,12 +1,12 @@
 package com.paypal.aurora
 
-import static org.apache.commons.lang.StringUtils.isNotEmpty
-
 import com.paypal.aurora.exception.RestClientRequestException
 import com.paypal.aurora.model.*
 import grails.converters.JSON
 import grails.converters.XML
 import org.apache.shiro.grails.annotations.RoleRequired
+
+import static org.apache.commons.lang.StringUtils.isNotEmpty
 
 class RouterController {
 
@@ -40,6 +40,7 @@ class RouterController {
                 redirect(action: 'list')
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'list')
         }
@@ -58,6 +59,7 @@ class RouterController {
             quantumService.createRouter(router)
             redirect(action: 'list')
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'create', params: params)
         }
@@ -72,6 +74,7 @@ class RouterController {
             quantumService.updateRouter(router)
             redirect(action: 'show', params: [id: params.id])
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'show', params: [id: params.id])
         }
@@ -80,16 +83,17 @@ class RouterController {
     @RoleRequired('admin')
     def delete = {
         List<String> routerIds = Requests.ensureList(params.selectedRouters ?: params.routerId)
-        try {
-            for (id in routerIds) {
-                quantumService.deleteRouter(id)
+        def model = quantumService.deleteRouters(routerIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete routers: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
+        withFormat {
+            html{
+                flash.message = flashMessage
+                redirect(action : 'list')
             }
-            redirect(action: 'list')
-        } catch (RestClientRequestException e) {
-            flash.message = ExceptionUtils.getExceptionMessage(e)
-            chain(action: 'list')
+            xml { new XML(model).render(response)}
+            json { new JSON(model).render(response)}
         }
-
     }
 
     def setGateway = {
@@ -98,6 +102,7 @@ class RouterController {
             params.networks = getExternalNetworks(quantumService.networkList)
             [parent: "/router/show/$params.id"]
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'create', params: params, parent: "/router/show/$params.id")
         }
@@ -115,6 +120,7 @@ class RouterController {
             quantumService.updateRouter(router)
             redirect(action: 'show', params: [id: params.id])
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'show', params: params)
         }
@@ -126,6 +132,7 @@ class RouterController {
             params.networks = getInternalNetworks(quantumService.networkList)
             [parent: "/router/show/$params.id"]
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'create', params: params, parent: "/router/show/$params.id")
         }
@@ -153,6 +160,7 @@ class RouterController {
 
             redirect(action: 'show', params: [id: params.id])
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             chain(action: 'addInterface', params: params)
         }
@@ -161,14 +169,16 @@ class RouterController {
     def deleteInterface = {
         String routerId = params.id
         List<String> portIds = Requests.ensureList(params.selectedPorts ?: params.portId)
-        try {
-            for (portId in portIds) {
-                quantumService.removeRouterInterface(routerId, portId)
+        def model = quantumService.removeRouterInterfaces(routerId, portIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete interface with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
+        withFormat {
+            html{
+                flash.message = flashMessage
+                redirect(action: 'show', params: [id: params.id])
             }
-            redirect(action: 'show', params: [id: params.id])
-        } catch (RestClientRequestException e) {
-            flash.message = ExceptionUtils.getExceptionMessage(e)
-            chain(action: 'show', params: [id: params.id])
+            xml {new XML(model).render(response)}
+            json{new JSON(model).render(response)}
         }
     }
 

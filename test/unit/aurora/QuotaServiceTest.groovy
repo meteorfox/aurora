@@ -1,13 +1,13 @@
 package aurora
 
-import com.paypal.aurora.OpenStackRESTService
-import com.paypal.aurora.InstanceService
 import com.paypal.aurora.FlavorService
+import com.paypal.aurora.InstanceService
+import com.paypal.aurora.OpenStackRESTService
 import com.paypal.aurora.QuotaService
-import com.paypal.aurora.SessionStorageService
 import com.paypal.aurora.model.Flavor
 import com.paypal.aurora.model.Quota
 import com.paypal.aurora.model.QuotaUsage
+import com.paypal.aurora.model.SessionStorage
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
 import org.gmock.WithGMock
@@ -30,6 +30,7 @@ class QuotaServiceTest extends GMockTestCase {
 
     static final OS_QUOTAS = 'os-quota-sets'
     static final NOVA = 'compute'
+    static final NOVA_VOLUME = 'volume'
     static final FLAVOR = new Flavor(flavorAsMap)
 
     static final quotas = [volumes: '2', count: '1', gigabytes: '4', ram: '4', instances: '5', cores: '6']
@@ -58,8 +59,9 @@ class QuotaServiceTest extends GMockTestCase {
         service.openStackRESTService.NOVA.returns(NOVA).stub()
         service.openStackRESTService.get(NOVA, OS_QUOTAS + "/$TENANT_ID").returns([quota_set: quotasWithId]).stub()
 
-        service.sessionStorageService = mock(SessionStorageService)
+        service.sessionStorageService = mock(SessionStorage)
         service.sessionStorageService.tenant.returns([id: TENANT_ID]).stub()
+        service.sessionStorageService.openStackVersion.returns('folsom').stub()
 
         service.flavorService = mock(FlavorService)
         service.flavorService.listAll().returns(flavorList).stub()
@@ -83,6 +85,7 @@ class QuotaServiceTest extends GMockTestCase {
 
     def testSetQuotasByTenantId() {
         service.openStackRESTService.put(NOVA, OS_QUOTAS + "/$TENANT_ID",null,[quota_set:quotas]).returns([quota_set: quotas]).stub()
+        service.openStackRESTService.put(NOVA_VOLUME, OS_QUOTAS + "/$TENANT_ID",null,[quota_set:quotas]).returns([quota_set: quotas]).stub()
         def resp = [quota_set: quotas]
 
         play {

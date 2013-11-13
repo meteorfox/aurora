@@ -1,71 +1,74 @@
 <%@ page import="com.paypal.aurora.OpenStackRESTService; grails.converters.JSON; com.paypal.aurora.Constant" %>
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="storage"/> 
+    <meta name="menu-level-2" content="volumes"/> 
     <title>Volumes</title>
-</head>
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'autorefresh.js')}"></script>     
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'volume-ui.js')}"></script>
+  </head>
+  <body>
 
-<body>
-<script type="text/javascript" src="/js/volume-ui.js"></script>
-<script type="text/javascript" src="/js/autorefresh.js"></script>
-<div class="body">
-    <h1>Volumes</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:form method="post" class="validate">
-        <div class="list">
-            <div class="buttons">
-                <g:buttonSubmit class="create" id="create" action="create" value="Create Volume" title="Create new volume"/>
-                <g:if test="${volumes}">
-                    <g:buttonSubmit class="delete" id="delete" action="delete" value="Delete Volume(s)"
-                                    data-warning="Really delete volume(s)?" title="Delete selected volume(s)"/>
-                </g:if>
-            </div>
-            <div id = 'table_container'>
-                <g:render template="volumes"/>
-            </div>
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div id="volumes_info_box" class="alert alert-info"></div>
+            <g:if test="${flash.message}">
+              <div id="message" class="message alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
         </div>
 
-        <div class="paginateButtons">
-        </div>
-    </g:form>
-    <shiro:hasRole name="${Constant.ROLE_ADMIN}">
-        <h1>Volume types</h1>
         <g:form method="post" class="validate">
-            <div class="list">
-                <div class="buttons">
-                    <g:buttonSubmit class="create" id="createType" action="createType" value="Create Volume Type" title="Create new volume type"/>
-                    <g:if test="${volumeTypes}">
-                        <g:buttonSubmit class="delete" id="deleteType" action="deleteType" value="Delete Volume Type(s)"
-                                        data-warning="Really delete volume type(s)?" title="Delete selected volume type(s)"/>
-                    </g:if>
-                </div>
-                <table id="table_volumeTypes" class="sortable twoTablesOnPage">
-                    <thead>
-                    <tr>
-                        <th class="checkboxTd">&thinsp;x</th>
-                        <th>Name</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <g:each var="volumeType" in="${volumeTypes}" status="i">
-                        <tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
-                            <td><g:checkBox id="checkBox_${volumeType.id}" name="selectedVolumeTypes"
-                                            value="${volumeType.id}" checked="0"/></td>
-                            <td><g:link elementId="showType-${volumeType.id}" action="showType"
-                                        params="[id: volumeType.id]">${volumeType.name}</g:link></td>
-                        </tr>
-                    </g:each>
-                    </tbody>
-                </table>
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Volumes</span>
+              <ul class="box-toolbar">
+                <li><g:buttonSubmit class="btn btn-xs btn-green" id="create" action="create" value="Create Volume" title="Create new volume"/></li>
+                <g:if test="${volumes}">
+                  <li><g:buttonSubmit class="btn btn-xs btn-red delete" id="delete" action="delete" value="Delete Volume(s)"
+                                  data-warning="Really delete volume(s)?" title="Delete selected volume(s)"/></li>
+                </g:if>
+              </ul>
+            </div>
+            <div class="box-content" id="table_container">
+              <g:render template="volumes"/>
+            </div>
+            <div class="box-footer">
+              <div class="paginateButtons">
+              </div>
+            </div>
+          </div>
+        </g:form>
+        <shiro:hasRole name="${Constant.ROLE_ADMIN}">
+          <g:form method="post" class="validate">
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Volumes Types</span>
+              <ul class="box-toolbar">
+                <li><g:buttonSubmit class="btn btn-xs btn-green" action="createType" value="Create Volume Type" title="Create new volume type"/></li>
+                <g:if test="${volumeTypes}">
+                  <li><g:buttonSubmit class="btn btn-xs btn-red delete" id="deleteType" action="deleteType" value="Delete Volume Type(s)"
+                                  data-warning="Really delete volume type(s)?" title="Delete selected volume type(s)"/>
+                </g:if>
+              </ul>
+            </div>
+          
+            <div class="box-content">
+              <g:render template="volumeTypes"/>
             </div>
 
-            <div class="paginateButtons">
+            <div class="box-footer">
+              <div class="paginateButtons">
+              </div>
             </div>
-        </g:form>
-    </shiro:hasRole>
-</div>
-</body>
+          </div>
+          </g:form>
+        </shiro:hasRole>
+      </div>
+      </div>
+  </body>
 </html>

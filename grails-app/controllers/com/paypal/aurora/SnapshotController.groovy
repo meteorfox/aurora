@@ -22,7 +22,7 @@ class SnapshotController {
             snapshots = snapshotService.getAllSnapshots()
         } catch (RestClientRequestException e){
             error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
         }
         def model = [snapshots : snapshots, errors : error]
         withFormat {
@@ -39,7 +39,7 @@ class SnapshotController {
             snapshots = snapshotService.getAllSnapshots()
         } catch (RestClientRequestException e){
             error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
         }
         def model = [snapshots : snapshots, errors : error]
         withFormat {
@@ -59,6 +59,7 @@ class SnapshotController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def errors = ExceptionUtils.getExceptionMessage(e)
             withFormat {
                 html { flash.message = errors; redirect([parent:"/snapshot", action: 'list'])}
@@ -70,28 +71,16 @@ class SnapshotController {
 
     def delete = {
         List<String> snapshotIds = Requests.ensureList(params.selectedSnapshots ?: params.id)
-        List<String> notRemovedSnapshotIds = []
-        def deleted = []
-        def error = [:]
-        for (snapshotId in snapshotIds) {
-            try {
-                deleted << snapshotService.deleteSnapshotById(snapshotId)
-            } catch (RestClientRequestException e) {
-                log.error "Could not delete shapshot: ${e}"
-                notRemovedSnapshotIds << snapshotIds
-                error[snapshotId] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def flashMessage = null
-        if (notRemovedSnapshotIds) {
-            def ids = notRemovedSnapshotIds.join(',')
-            flashMessage = "Could not delete snapshots with id: ${ids}"
-        }
-        def view = [deleted: deleted,not_deleted_ids:notRemovedSnapshotIds, errors : error]
+        def model = snapshotService.deleteSnapshotsById(snapshotIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete snapshots with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { flash.message = flashMessage; redirect(action: 'list')}
-            xml { new XML(view).render(response) }
-            json { new JSON(view).render(response) }
+            html {
+                flash.message = flashMessage;
+                redirect(action: 'list')
+            }
+            xml { new XML(model).render(response) }
+            json { new JSON(model).render(response) }
         }
     }
 
@@ -120,6 +109,7 @@ class SnapshotController {
                     json { new JSON(resp).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
                     html { flash.message = errors; chain(action: 'create', params: params)}

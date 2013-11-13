@@ -1,7 +1,7 @@
 class AuthFilters {
 
     def filters = {
-        all(uriExclude: "/init/index", uri: "/**") {
+        all(controller: "init|info", invert: true) {
             before = {
                 // Ignore direct views (e.g. the default main index page).
                 if (!controllerName) return true
@@ -9,7 +9,7 @@ class AuthFilters {
                 // Access control by convention.
                 accessControl()
             }
-
         }
     }
+
 }

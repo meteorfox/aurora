@@ -24,6 +24,11 @@ class FlavorService {
         openStackRESTService.delete(openStackRESTService.NOVA, "flavors/$id")
     }
 
+    def deleteFlavors(List <String> flavorIds){
+        def model = ServiceUtils.removeItems(this, flavorIds)
+        return model
+    }
+
     def create(Map flavor) {
         flavor.with {
             if (!containsKey('ephemeral') || ephemeral == '') ephemeral = 0

@@ -12,7 +12,11 @@ import javax.servlet.http.HttpServletResponse
 
 class TenantController {
     final private static String MANY_USERS = "many_users"
-    def static allowedMethods = [list: ['GET', 'POST'], show: ['GET', 'POST'], save: ['GET', 'POST'], update: ['GET', 'POST'], delete: ['GET', 'POST'], quotas: ['GET', 'POST'], saveQuotas: ['GET', 'POST'], users: 'GET', usersSave: ['GET', 'POST']]
+    def static allowedMethods = [list: ['GET', 'POST'], 
+        show: ['GET', 'POST'], 
+        save: ['GET', 'POST'], update: ['GET', 'POST'], delete: ['GET', 'POST'], 
+        quotas: ['GET', 'POST'], saveQuotas: ['GET', 'POST'], users: 'GET', 
+        usersSave: ['GET', 'POST'], userRoleAdd: ['GET', 'POST'], userRoleDelete: ['GET', 'POST']]
 
     def tenantService
     def quotaService
@@ -33,6 +37,7 @@ class TenantController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [tenants: [], errors: error, flash: [message: error]]
             withFormat {
@@ -48,13 +53,13 @@ class TenantController {
         try {
             def tenant = tenantService.getTenantById(params.id)
             Quota[] quotas = quotaService.getQuotasByTenantId(tenant.id)
-            OpenStackUser[] users = openStackUserService.getAllUsersByTenant(tenant.id)
             withFormat {
-                html { [parent: "/tenant/list", tenant: tenant, quotas: quotas, users: users] }
-                xml { new XML([tenant: tenant, quotas: quotas, users: users]).render(response) }
-                json { new JSON([tenant: tenant, quotas: quotas, users: users]).render(response) }
+                html { [parent: "/tenant/list", tenant: tenant, quotas: quotas] }
+                xml { new XML([tenant: tenant, quotas: quotas]).render(response) }
+                json { new JSON([tenant: tenant, quotas: quotas]).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def errors = ExceptionUtils.getExceptionMessage(e)
             withFormat {
                 html { flash.message = errors; redirect(action: 'list') }
@@ -63,7 +68,27 @@ class TenantController {
             }
         }
     }
-
+    @RoleRequired('admin')
+    def _users = {
+        try {
+            def tenant = tenantService.getTenantById(params.id)
+            OpenStackUser[] users = openStackUserService.getAllUsersByTenant(tenant.id)
+            def usersRoles = openStackUserService.getUsersRoles(users, params.id)
+            withFormat {
+                html { [tenant: tenant, users: users, usersRoles: usersRoles] }
+                xml { new XML([tenant: tenant, users: users]).render(response) }
+                json { new JSON([tenant: tenant, users: users]).render(response) }
+            }
+        } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
+            def errors = ExceptionUtils.getExceptionMessage(e)
+            withFormat {
+                html { flash.message = errors; }
+                xml { new XML([errors: errors]).render(response) }
+                json { new JSON([errors: errors]).render(response) }
+            }
+        }
+    }
     @RoleRequired('admin')
     def edit = {
         try {
@@ -87,6 +112,7 @@ class TenantController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             flash.message = ExceptionUtils.getExceptionMessage(e)
             redirect(action: 'list')
         }
@@ -112,6 +138,7 @@ class TenantController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
                     html { flash.message = errors; chain(action: 'editTenant', params: params) }
@@ -149,6 +176,7 @@ class TenantController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
                     html { flash.message = errors; chain(action: 'create', params: params) }
@@ -162,25 +190,9 @@ class TenantController {
     @RoleRequired('admin')
     def delete = {
         List<String> tenantIds = Requests.ensureList(params.selectedTenants ?: params.id)
-        List<String> notRemovedTenantIds = []
-        def deleted = []
-        def error = [:]
-        for (tenantId in tenantIds) {
-            try {
-                tenantService.deleteTenantById(tenantId)
-                deleted << tenantId
-            } catch (RestClientRequestException e) {
-                log.error "Could not delete tenant: ${e}"
-                notRemovedTenantIds << tenantId
-                error[tenantId] = ExceptionUtils.getExceptionMessage(e)
-            }
-        }
-        def flashMessage = null
-        if (notRemovedTenantIds) {
-            def ids = notRemovedTenantIds.join(',')
-            flashMessage = "Could not delete tenants with id: ${ids}"
-        }
-        def model = [deleted: deleted, not_deleted_ids: notRemovedTenantIds, errors: error]
+        def model = tenantService.deleteTenantsById(tenantIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete tenants with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
             html { flash.message = flashMessage; redirect(action: 'list') }
             xml { new XML(model).render(response) }
@@ -203,8 +215,9 @@ class TenantController {
             }
         } catch (RestClientRequestException e) {
             def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             withFormat {
+                html { flash.message = error; chain(controller:"quotaUsage", action:"list") }
                 xml { new XML([errors: error]).render(response) }
                 json { new JSON([errors: error]).render(response) }
             }
@@ -244,7 +257,7 @@ class TenantController {
             try {
                 resp = quotaService.setQuotasByTenantId(saved, params.id)
             } catch (RestClientRequestException e) {
-                response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def message = ExceptionUtils.getExceptionMessage(e)
                 error[params.id] = message
             }
@@ -258,36 +271,39 @@ class TenantController {
     }
 
     @RoleRequired('admin')
-    def usersSave = {
-        def tenantId = params.tenantId;
-        Map newUsersRoles = JSON.parse(params.newUsersRoles);
-        openStackUserService.changeUsersRole(newUsersRoles, tenantId)
+    def userRoleAdd = {
+        openStackUserService.setUserRole(params.tenantId, params.userId, params.roleId)
+        
         withFormat {
             html { render { '' } }
-            xml { new XML(newUsersRoles).render(response) }
-            json { new JSON(newUsersRoles).render(response) }
+            xml { new XML([]).render(response) }
+            json { new JSON([]).render(response) }
         }
     }
-
     @RoleRequired('admin')
-    def users = {
+    def userRoleDelete = {
+        openStackUserService.deleteUserRole(params.tenantId, params.userId, params.roleId)
+        withFormat {
+            html { render { '' } }
+            xml { new XML([]).render(response) }
+            json { new JSON([]).render(response) }
+        }
+    }
+    
+    @RoleRequired('admin')
+    def _addUser = {
         try {
-            def manyUsers, tenant, roles, users, usersRoles
-            manyUsers = sessionStorageService.isFlagEnabled(MANY_USERS)
-            tenant = tenantService.getTenantById(params.id)
-            roles = openStackUserService.allRoles
-            if (!manyUsers) {
-                users = openStackUserService.allUsers
-                usersRoles = openStackUserService.getUsersRoles(users, params.id)
-            }
-            def model = [roles: roles, users: users, usersRoles: usersRoles, manyUsers: manyUsers]
+            def allRoles = openStackUserService.allRoles
+            def allUsers = openStackUserService.allUsers
+            def model = [allRoles: allRoles, allUsers: allUsers]
 
             withFormat {
-                html { [parent: "/tenant/show/${params.id}", tenant: tenant, roles: roles, users: users, usersRoles: usersRoles, manyUsers: manyUsers] }
+                html { [allRoles: allRoles, allUsers: allUsers] }
                 xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def error = ExceptionUtils.getExceptionMessage(e)
             def model = [errors: error]
             withFormat {
@@ -296,7 +312,7 @@ class TenantController {
                 json { new JSON(model).render(response) }
             }
         }
-    }
+    }    
 
 }
 

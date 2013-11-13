@@ -1,59 +1,51 @@
 package com.paypal.aurora
-import groovy.json.JsonSlurper
-import org.apache.commons.logging.LogFactory
 
-/**
- * Type-checked configuration access with intelligent defaults.
- */
+import com.paypal.aurora.model.Environment
+import groovy.json.JsonSlurper
+import org.codehaus.jackson.map.ObjectMapper
+import org.codehaus.jackson.type.TypeReference
+
 class ConfigService {
 
-    private static final logger = LogFactory.getLog(this)
-
-    static transactional = false
+    static final String CONFIG_FILE = 'Config.json'
 
     def grailsApplication
-    def configError
+    ObjectMapper objectMapper
+    JsonSlurper jsonSlurper
+    String errorMessage
 
-    /**
-     * @return the full local system path to the directory where Aurora stores its configuration files
-     */
     String getAuroraHome() {
         grailsApplication.config.auroraHome
     }
 
-
-    /**
-     * @return true if cloud keys and other minimum configuration has been provided, false otherwise
-     */
-
-    def reloadConfig(){
-        grailsApplication.config.appConfigured = new File(auroraHome, 'Config.json').exists()
-        grailsApplication.config.isValid = false
+    boolean isProduction() {
+        return grailsApplication.metadata['grails.env'] == 'production'
     }
 
-    String getConfigError(){
-        return configError
+    void reloadConfig() {
+        try {
+            def file = new File(auroraHome, CONFIG_FILE)
+            jsonSlurper.parse(new FileReader(file))
+            grailsApplication.config.properties.environments = objectMapper.readValue(file, new TypeReference<HashMap<String, List<Environment>>>() {}).environments
+            errorMessage = null
+        } catch (Exception e) {
+            log.error(e.getMessage(), e)
+            errorMessage = ExceptionUtils.getExceptionMessage(e)
+        }
     }
 
-    def readConfig(){
-        grailsApplication.config.properties = new JsonSlurper().parse(new FileReader(new File(getAuroraHome(), 'Config.json')))
-        grailsApplication.config.isValid = true
+    Environment getEnvironmentByName(String name) {
+        return environments.find { it.name.toUpperCase() == name.toUpperCase() }.clone()
     }
 
     boolean isAppConfigured() {
-        if (grailsApplication.config.appConfigured && !grailsApplication.config.isValid) {
-                try{
-                    readConfig()
-                } catch (Exception e) {
-                    if (logger.errorEnabled) {
-                        logger.error(e.getMessage(), e)
-                    }
-                    configError = ExceptionUtils.getExceptionMessage(e)
-                    grailsApplication.config.isValid = false
-                }
-        }
-        if (!grailsApplication.config.appConfigured)
-            configError = "File not found"
-        grailsApplication.config.appConfigured && grailsApplication.config.isValid
+        return !errorMessage
+    }
+
+    List<Environment> getEnvironments() {
+        return grailsApplication.config.properties.environments
+    }
+    String getSignInUrl() {
+        return grailsApplication.config.properties.environments.get(0).signInUrl
     }
 }

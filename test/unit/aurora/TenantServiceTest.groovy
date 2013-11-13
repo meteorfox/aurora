@@ -1,8 +1,8 @@
 package aurora
 
 import com.paypal.aurora.OpenStackRESTService
-import com.paypal.aurora.SessionStorageService
 import com.paypal.aurora.TenantService
+import com.paypal.aurora.model.SessionStorage
 import com.paypal.aurora.model.Tenant
 import grails.test.mixin.TestFor
 import org.gmock.GMockTestCase
@@ -25,7 +25,7 @@ class TenantServiceTest extends GMockTestCase {
         service.openStackRESTService = mock(OpenStackRESTService)
         service.openStackRESTService.KEYSTONE.returns(KEYSTONE).stub()
         service.openStackRESTService.get(KEYSTONE, "tenants").returns([tenants: [tenant1, tenant2]]).stub()
-        service.sessionStorageService = mock(SessionStorageService)
+        service.sessionStorageService = mock(SessionStorage)
     }
 
     def testGetAllTenants() {
@@ -62,6 +62,7 @@ class TenantServiceTest extends GMockTestCase {
         def body = ["tenant": tenant1]
         body.tenant.zones = zones
         def bodyWithOutZones = ["tenant": tenant2]
+        bodyWithOutZones.tenant.zones = null
         service.openStackRESTService.post(KEYSTONE, "tenants/$tenant1.id", body).returns([tenant: tenant1]).stub()
         service.openStackRESTService.post(KEYSTONE, "tenants/$tenant2.id", bodyWithOutZones).returns([tenant: tenant2]).stub()
 

@@ -16,7 +16,7 @@ class TestTenantDatacenterChangeRequests(RESTBaseTest):
         different_dcs = [dc for dc in self.auth.get_datacenters() if dc != old_dc]
         new_dc = old_dc if len(different_dcs) == 0 else different_dcs[0]
         diff_tenants = [t['id'] for t in self.utils.get_list('tenants') if t['id'] != old_tenant]
-        new_tenant = old_tenant if len(diff_tenants) == 0 else diff_tenants[0]
+        new_tenant = old_tenant if len(diff_tenants) == 0 else diff_tenants[-1]
 
         # change DC and tenant
         self.auth.change_datacenter(new_dc)

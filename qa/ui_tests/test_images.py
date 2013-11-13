@@ -40,7 +40,7 @@ class TestImages(UIBaseTest):
         self.uidriver.enter_text(self.uimap.ed_location, image_location)
 
         self.uidriver.click(*self.uimap.cb_format)
-        self.uidriver.click(*self.uimap.select_format_iso)
+        self.uidriver.click(*self.uimap.select_format_qcow2)
 
         self.uidriver.enter_text(self.uimap.ed_min_disk, 1)
         self.uidriver.enter_text(self.uimap.ed_min_ram, 128)
@@ -127,14 +127,15 @@ class TestImages(UIBaseTest):
     def test_06_list_instance_snapshots(self):
         ok_(len(self.snapshots) == 1, "Snapshot wasn't created in prev. test-case. Interrupting.")
         name = self.snapshots[0]
-        self.uidriver.filter_table(name, bottom_table=True)
-        cnt_flt = int(self.uidriver.find_element(*self.uimap.counter1).text)
-        cnt_tbl = self.uidriver.count_rows_with_filter(self.uimap.tbl_snapshots, name)
-        ok_(cnt_flt == cnt_tbl, "Failed to filter list of snapshots.")
-
-        # rows = self.uidriver.parse_table(self.uimap.tbl_snapshots)
-        # ok_(len(rows) == 1 and rows[0]['NAME'] == name, "Failed to filter list of snapshots.")
-        self.uidriver.filter_table('', bottom_table=True)
+        if self.uidriver.is_element_present(*self.uimap.ed_filter2):
+            cnt_flt = int(self.uidriver.find_element(*self.uimap.counter1).text)
+            cnt_tbl = self.uidriver.count_rows_with_filter(self.uimap.tbl_snapshots, name)
+            ok_(cnt_flt == cnt_tbl, "Failed to filter list of snapshots.")
+            self.uidriver.filter_table('', bottom_table=True)
+        else:
+            rows = self.uidriver.parse_table(self.uimap.tbl_snapshots)
+            #ok_(len(rows) == 1 and rows[0]['NAME'] == name, "Failed to filter list of snapshots.")
+            ok_(len(rows) == 1, "Filter is absent. There is only one snapshot in the table.")
 
     def test_07_delete_instance_snapshot(self):
         ok_(len(self.snapshots) == 1, "Snapshot wasn't created in prev. test-case. Interrupting.")

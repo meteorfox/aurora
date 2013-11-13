@@ -74,7 +74,13 @@ class QuantumService {
     }
 
     List<Port> getPortsByNetworkId(String id) {
-        return portList.findAll {it.networkId==id}
+        List<Port> ports = []
+        def request = ['network_id' : id]
+        def portsResp = openStackRESTService.get(openStackRESTService.QUANTUM, "$PREFIX/ports.json", request);
+        portsResp.ports.each{
+            ports << new Port(it)
+        }
+        return ports
     }
 
     List<Port> getPortsByRouterId(String id) {
@@ -91,12 +97,24 @@ class QuantumService {
         openStackRESTService.delete(openStackRESTService.QUANTUM, "$PREFIX/networks/$id")
     }
 
+    def deleteNetworks(List <String> id){
+        return ServiceUtils.removeItems(this, "deleteNetwork", id)
+    }
+
     void deleteSubnet(String id) {
         openStackRESTService.delete(openStackRESTService.QUANTUM, "$PREFIX/subnets/$id")
     }
 
+    def deleteSubnets(List <String> subnetIds){
+        return ServiceUtils.removeItems(this, "deleteSubnet", subnetIds)
+    }
+
     void deletePort(String id) {
         openStackRESTService.delete(openStackRESTService.QUANTUM, "$PREFIX/ports/$id")
+    }
+
+    def deletePorts(List <String> portIds){
+        return ServiceUtils.removeItems(this, "deletePort", portIds)
     }
 
     Network createNetwork(Network network) {
@@ -119,7 +137,7 @@ class QuantumService {
     }
 
     Subnet createSubnet(Subnet subnet) {
-        new Subnet(openStackRESTService.post(openStackRESTService.QUANTUM, "$PREFIX/subnets", [subnet: [
+        Map sub = ServiceUtils.clearMap([
                 name: subnet.name,
                 enable_dhcp: subnet.enableDhcp,
                 network_id: subnet.networkId,
@@ -130,7 +148,8 @@ class QuantumService {
                 tenant_id: subnet.tenantId,
                 host_routes: subnet.hostRoutes,
                 cidr: subnet.cidr
-        ]]).subnet)
+        ])
+        new Subnet(openStackRESTService.post(openStackRESTService.QUANTUM, "$PREFIX/subnets", [subnet: sub]).subnet)
     }
 
     Subnet updateSubnet(Subnet subnet) {
@@ -222,6 +241,10 @@ class QuantumService {
         openStackRESTService.delete(openStackRESTService.QUANTUM, "$PREFIX/routers/$id")
     }
 
+    def deleteRouters (List <String> routerIds){
+        return ServiceUtils.removeItems(this, "deleteRouter", routerIds)
+    }
+
     JSON addRouterInterfaceBySubnet(String routerId, String subnetId) {
         new JSON(openStackRESTService.put(openStackRESTService.QUANTUM, "$PREFIX/routers/${routerId}/add_router_interface",
                 null, [subnet_id: subnetId]))
@@ -232,8 +255,12 @@ class QuantumService {
                 null, [port_id: portId]))
     }
 
-    JSON removeRouterInterface(String routerId, String portId) {
+    JSON removeRouterInterface(String portId, String routerId) {
         new JSON(openStackRESTService.put(openStackRESTService.QUANTUM, "$PREFIX/routers/${routerId}/remove_router_interface",
                 null, [port_id: portId]))
+    }
+
+    def removeRouterInterfaces(String routerId, List <String> portIds){
+        return ServiceUtils.removeItems(this,"removeRouterInterface", portIds, [routerId])
     }
 }

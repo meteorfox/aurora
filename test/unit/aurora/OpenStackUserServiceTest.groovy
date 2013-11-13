@@ -20,13 +20,14 @@ class OpenStackUserServiceTest extends GMockTestCase {
     static final ROLES = 'OS-KSADM/roles'
     static final TENANT_ID = 'tenantId'
 
-    static final user1 =[id: 'userId1', name: 'name1', email: 'email1@com', enabled: true, tenant_id: 'tenantId1']
-    static final user2 =[id: 'userId2', name: 'name2', email: 'email2@com', enabled: true, tenant_id: 'tenantId2']
+    static final user1 = [id: 'userId1', name: 'name1', email: 'email1@com', enabled: true, tenant_id: 'tenantId1']
+    static final user2 = [id: 'userId2', name: 'name2', email: 'email2@com', enabled: true, tenant_id: 'tenantId2']
 
     static final role1 = [id: 'roleId1', name: 'role1']
     static final role2 = [id: 'roleId2', name: 'role2']
 
     private static final String WRONG_USER_NAME = "123"
+
     @Before
     void setUp() {
         OpenStackRESTService openStackRESTService = mock(OpenStackRESTService);
@@ -84,8 +85,8 @@ class OpenStackUserServiceTest extends GMockTestCase {
     }
 
     def testCreateUser() {
-        def body = [user :[ email : user1.email, password : 'pwd',
-                name : user1.name, tenantId : user1.tenant_id, enabled : true]]
+        def body = [user: [email: user1.email, password: 'pwd',
+                name: user1.name, tenantId: user1.tenant_id, enabled: true]]
 
         service.openStackRESTService.post(KEYSTONE, USERS, body).returns([user: user1]).stub();
 
@@ -94,13 +95,13 @@ class OpenStackUserServiceTest extends GMockTestCase {
         service.openStackRESTService.put(KEYSTONE, path, null).returns([role: role1]).stub();
 
         play {
-            assertEquals([role:role1], service.createUser([name: user1.name, email: user1.email, tenant_id: user1.tenant_id, role_id: 'roleId1', password: 'pwd']))
+            assertEquals([user: user1], service.createUser([name: user1.name, email: user1.email, tenant_id: user1.tenant_id, role_id: 'roleId1', password: 'pwd']))
         }
 
     }
 
     def testUpdateUser() {
-        def body = [user : [id : user1.id, name : user1.name, email : user1.email, password: 'pwd']]
+        def body = [user: [id: user1.id, name: user1.name, email: user1.email, password: 'pwd']]
 
         def putResponse = [user: [id: user1.id, name: user1.name, extra: [tenantId: user1.tenant_id, enabled: true, email: user1.email, password: 'encodedPassword']]]
 
@@ -119,10 +120,10 @@ class OpenStackUserServiceTest extends GMockTestCase {
         }
     }
 
-    def testGetUserRole() {
+    def testGetUserRoles() {
         service.openStackRESTService.get(KEYSTONE, "$TENANTS/tenantId1/$USERS/userId1/roles").returns([roles: [role1, role2]]).stub()
         play {
-            assertEquals([role1, role2], service.getUserRole('userId1', 'tenantId1'))
+            assertEquals([role1, role2], service.getUserRoles('userId1', 'tenantId1'))
         }
     }
 
@@ -142,14 +143,14 @@ class OpenStackUserServiceTest extends GMockTestCase {
         }
     }
 
-    def testGetUserRoles() {
+    def testGetUsersRoles() {
         service.openStackRESTService.get(KEYSTONE, "$TENANTS/tenantId1/$USERS/userId1/roles").returns([roles: [role1, role2]]).stub()
         service.openStackRESTService.get(KEYSTONE, "$TENANTS/tenantId1/$USERS/userId2/roles").returns([roles: [role2, role1]]).stub()
 
         def users = [new OpenStackUser(user1), new OpenStackUser(user2)]
 
         play {
-            assertEquals([(user1.id): new Role(role1), (user2.id): new Role(role2)], service.getUsersRoles(users, 'tenantId1'))
+            assertEquals([(user1.id): [new Role(role1),new Role(role2)], (user2.id): [new Role(role2),new Role(role1)]], service.getUsersRoles(users, 'tenantId1'))
         }
 
     }
@@ -162,26 +163,6 @@ class OpenStackUserServiceTest extends GMockTestCase {
         assertEquals(nullRole, new Role(null))
         assertEquals(nullRole, new Role([:]))
         assertEquals(nullRole, new Role([]))
-        assertEquals(nullRole, new Role([[:]]))
-        assertEquals(role, new Role([[id: 'id1', name: 'role1'], [id: 'id2', name: 'role2']]))
         assertEquals(role, new Role([id: 'id1', name: 'role1']))
-    }
-
-    def testChangeUsersRole() {
-        service.openStackRESTService.get(KEYSTONE, USERS, [name: user1.name]).returns(user: user1).times(1)
-        service.openStackRESTService.get(KEYSTONE, USERS, [name: user2.name]).returns(user: user2).times(1)
-        service.openStackRESTService.get(KEYSTONE, "$TENANTS/$TENANT_ID/$USERS/$user1.id/roles").returns([roles: [[id:role2.id, name:role2.name]]]).times(1)
-        service.openStackRESTService.get(KEYSTONE, "$TENANTS/$TENANT_ID/$USERS/$user2.id/roles").returns([roles: [[id:role1.id, name:role1.name]]]).times(1)
-        service.openStackRESTService.put(KEYSTONE, "$TENANTS/$TENANT_ID/$USERS/$user1.id/roles/OS-KSADM/${role1.id}", null).returns().times(1)
-        service.openStackRESTService.put(KEYSTONE, "$TENANTS/$TENANT_ID/$USERS/$user2.id/roles/OS-KSADM/${role2.id}", null).returns().times(1)
-        service.openStackRESTService.delete(KEYSTONE, "$TENANTS/$TENANT_ID/$USERS/$user1.id/roles/OS-KSADM/${role2.id}").returns().times(1)
-        service.openStackRESTService.delete(KEYSTONE, "$TENANTS/$TENANT_ID/$USERS/$user2.id/roles/OS-KSADM/${role1.id}").returns().times(1)
-        def usersRoles = [:]
-        usersRoles[user1.name] = role1.id
-        usersRoles[user2.name] = role2.id
-
-        play {
-            assertNull(service.changeUsersRole(usersRoles, TENANT_ID))
-        }
     }
 }

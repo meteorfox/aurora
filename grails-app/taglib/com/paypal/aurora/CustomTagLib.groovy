@@ -10,11 +10,12 @@ class CustomTagLib {
 
     def excuse = { out << jokeService.randomExcuse() }
 
-    def failureImage = {
+    def failureImage = { attrs ->
+        def rootContextPath = attrs.rootContextPath ? attrs.get('rootContextPath') : '';
         FailureImage failureImage = jokeService.randomFailureImage()
         String caption = failureImage.url ? """<figcaption>Creative Commons image by <a \
 href="${failureImage.url}">${failureImage.owner}</a></figcaption>""" : ''
-        out << """<figure class="failure"><img src="${failureImage.path}"/>${caption}</figure>"""
+        out << """<figure class="failure"><img src="${rootContextPath}${failureImage.path}"/>${caption}</figure>"""
     }
 
     /**
@@ -67,11 +68,17 @@ href="${failureImage.url}">${failureImage.owner}</a></figcaption>""" : ''
 
         // process remaining attributes
         outputAttributes(attrs)
-
+        if(inner.contains('<i')) {
+                  // close tag
+            out << '>'
+            out << inner
+            out << '</button>'  
+        } else {
         // close tag
-        out << '><div>'
-        out << inner
-        out << '</div></button>'
+            out << '><div>'
+            out << inner
+            out << '</div></button>'
+        }
     }
 
     /**
@@ -87,19 +94,4 @@ href="${failureImage.url}">${failureImage.owner}</a></figcaption>""" : ''
         }
     }
 
-    /**
-     * Shows a styled version of an availability zone name, either in a specified tag or in a span tag by default.
-     */
-    def availabilityZone = { attrs, body ->
-        String innerBody = body()
-        String value = attrs.value ? attrs.remove('value') : null
-        String tag = attrs.tag ?: 'span'
-
-        // Use the body or the value inside the tag
-        String inner = innerBody ?: value
-        if (inner) {
-            String styleClass = Styler.availabilityZoneToStyleClass(inner)
-            out << "<${tag} class=\"${styleClass}\">${inner}</${tag}>"
-        }
-    }
 }

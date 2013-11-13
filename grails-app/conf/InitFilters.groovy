@@ -1,19 +1,34 @@
+
 class InitFilters {
 
     def configService
 
+    static final REDIRECT_TO = ['init': 'auth', 'auth': 'init']
+    static final REDIRECT_CONDITION = ['init': true, 'auth': false]
+
     def filters = {
-        all(controller: '(init)', invert: true) {
+        all(controller: 'init|auth') {
             before = {
-                if (!configService.appConfigured) {
-                    redirect(controller: 'init')
+                def nextController = defineRedirect(controllerName)
+                if (nextController == controllerName) {
+                    return true
+                } else {
+                    redirect(controller: nextController)
                     return false
                 }
-
-                // If the last value is falsy and there is no explicit return statement then this filter method will
-                // return a falsy value and cause requests to fail silently.
-                return true
             }
         }
     }
+
+    String defineRedirect(String controllerName) {
+        if (!configService.production) {
+            configService.reloadConfig()
+        }
+        boolean configState = configService.appConfigured
+        if (configState == REDIRECT_CONDITION[controllerName]) {
+            return REDIRECT_TO[controllerName]
+        }
+        return controllerName
+    }
+
 }

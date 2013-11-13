@@ -30,7 +30,7 @@ class UserStateController {
             def error = ExceptionUtils.getExceptionMessage(e)
             flash.message = error
             model = [userState : userState, errors : error]
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
         }
         defineResponse(model)
     }
@@ -75,7 +75,7 @@ class UserStateController {
         } catch (RestClientRequestException e){
             def error = ExceptionUtils.getExceptionMessage(e)
             flash.message = error
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.status = ExceptionUtils.getExceptionCode(e)
             model = [errors : error]
         }
         defineResponse(model)
@@ -84,16 +84,25 @@ class UserStateController {
     def private checkParamValue(def param) {
         def value = params.get(param)
         if (!value) {
-            throw new UserStateException("Parameter '${param}' can't be null")
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Parameter '${param}' can't be null")
         }
         value
     }
 
     def private defineResponse(def view) {
-        withFormat {
-            html { redirect(uri: params.targetUri?:'/', model: view) }
-            xml { new XML(view).render(response) }
-            json { new JSON(view).render(response) }
+        if(params.projectSwitch) {
+            withFormat {
+                html { redirect(uri: '/instance/list') }
+                xml { new XML(view).render(response) }
+                json { new JSON(view).render(response) }
+            }
+            
+        } else {
+            withFormat {
+                html { redirect(uri: params.targetUri?:'/', model: view) }
+                xml { new XML(view).render(response) }
+                json { new JSON(view).render(response) }
+            }
         }
     }
 

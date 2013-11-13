@@ -1,33 +1,42 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
-    <title>${volumeType.id} Volume</title>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="storage"/> 
+    <meta name="menu-level-2" content="volumes"/> 
+    <meta name="menu-level-3" content="Volume Type Detail"/> 
+    <title>Volume Type Detail</title>
 </head>
 
 <body>
 <div class="body">
-    <h1>Volume Type Details</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:if test="${volumeType}">
-        <g:form controller="volume">
-        </g:form>
-    </g:if>
-    <div class="dialog">
-        <table id="table_volumeShowType">
+<div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-header">
+            <span class="title">Volume Type Detail</span>
+          </div>
+    <div class="box-content">
+      <table id="table_volumeShowType" class="table table-normal">
             <tbody>
-            <tr class="prop">
-                <td class="name" title="Volume ID">Volume Type ID:</td>
-                <td class="value">${volumeType.id}</td>
+            <tr>
+                <td title="Volume ID">Volume Type ID</td>
+                <td >${volumeType.id}</td>
             </tr>
-            <tr class="prop">
-                <td class="name" title="Display Name">Name:</td>
-                <td class="value">${volumeType.name}</td>
+            <tr>
+                <td title="Display Name">Name</td>
+                <td >${volumeType.name}</td>
             </tr>
         </table>
     </div>
+        </div>
+</div>
 </div>
 </body>
 </html>

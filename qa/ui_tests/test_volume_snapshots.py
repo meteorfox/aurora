@@ -43,18 +43,19 @@ class TestVolumeSnapshots(UIBaseTest):
         rows = self.uidriver.wait_for_row_change(self.uimap.tbl_volume_snapshots,
                                                  lambda s: s['NAME'] == snapshot_name and
                                                            s['STATUS'] == 'available')
-        ok_(rows is not False or len(rows) == 1, "Failed to create volume snapshot.")
+        ok_(rows, "Failed to create volume snapshot.")
+        ok_(len(rows) == 1, "Failed to create volume snapshot.")
 
         self.vol_snapshots.append(snapshot_name)
 
-    # def test_02_list_volume_snapshots(self):
-    #     ok_(len(self.vol_snapshots) > 0, "Volume snapshot creation failed so cannot filter the list.")
-    #     name = self.vol_snapshots[0]
-    #     self.uidriver.filter_table(name)
-    #     rows = self.uidriver.parse_table(self.uimap.tbl_volume_snapshots)
-    #     ok_(len(rows) == 1 and rows[0]['NAME'] == name, "Failed to filter list of volume snapshots.")
-    #
-    #     self.uidriver.filter_table('')
+    def test_02_list_volume_snapshots(self):
+        ok_(len(self.vol_snapshots) > 0, "Volume snapshot creation failed so cannot filter the list.")
+        name = self.vol_snapshots[0]
+        self.uidriver.filter_table(name)
+        rows = self.uidriver.parse_table(self.uimap.tbl_volume_snapshots)
+        ok_(len(rows) == 1 and rows[0]['NAME'] == name, "Failed to filter list of volume snapshots.")
+
+        self.uidriver.filter_table('')
 
     def test_03_launch_instance_from_volume_snapshot(self):
         # todo For now this test does not create instance because maybe it's out of scope. It just verifies if the correct default values are applied.
@@ -71,13 +72,16 @@ class TestVolumeSnapshots(UIBaseTest):
         #     "Wrong volume option selected by default.")
 
         # self.uidriver.select_cb_option(self.uimap.cb_volume_options, "Boot from volume")
-        self.uidriver.select_cb_option(self.uimap.cb_volume_options, vol_opt[1])
+        #self.uidriver.select_cb_option(self.uimap.cb_volume_options, vol_opt[1])
+        self.uidriver.select_cb_option(self.uimap.cb_volume_options, "Boot from volume snapshot (creates a new volume)")
         volumes = self.uidriver.get_cb_options(self.uimap.cb_volume_snapshot)
         if self.vol_snapshots[0] in volumes:
             self.uidriver.select_cb_option(self.uimap.cb_volume_snapshot, self.vol_snapshots[0])
+        self.uidriver.click(*self.uimap.bt_submit)
+        ok_(*self.uidriver.chk_error_message())
 
-        ok_(self.uidriver.get_selected_cb_option(self.uimap.cb_volume_snapshot) == self.vol_snapshots[0],
-            "Wrong volume snapshot selected by default.")
+        #ok_(self.uidriver.get_selected_cb_option(self.uimap.cb_volume_snapshot) == self.vol_snapshots[0],
+        #    "Wrong volume snapshot selected by default.")
 
     def test_04_delete_volume_snapshot(self):
         ok_(len(self.vol_snapshots) == 1, "Volume snapshot wasn't created in CREATE test-case. Interrupting.")

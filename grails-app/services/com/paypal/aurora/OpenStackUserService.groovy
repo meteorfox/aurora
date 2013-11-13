@@ -8,7 +8,6 @@ class OpenStackUserService {
     private static final String ROLES = 'OS-KSADM/roles'
 
     def openStackRESTService
-    def sessionStorageService
 
     def getAllUsers() {
         def resp = openStackRESTService.get(openStackRESTService.KEYSTONE, USERS)
@@ -22,7 +21,7 @@ class OpenStackUserService {
     def getAllUsersByTenant(def tenantId) {
         def resp = openStackRESTService.get(openStackRESTService.KEYSTONE, "$TENANTS/$tenantId/$USERS")
         def users = []
-        for(user in resp.users) {
+        for (user in resp.users) {
             users << new OpenStackUser(user)
         }
         return users
@@ -32,7 +31,7 @@ class OpenStackUserService {
         def resp = openStackRESTService.get(openStackRESTService.KEYSTONE, USERS, [name: userName])
         if (resp.user)
             return resp.user
-        for(def user in resp.users) {
+        for (def user in resp.users) {
             if (user.name == userName) {
                 return user
             }
@@ -51,17 +50,18 @@ class OpenStackUserService {
     }
 
     def createUser(def user) {
-        def body = [user :[ email : user.email, password : user.password,
-                name : user.name, tenantId : user.tenant_id, enabled : true]]
+        def body = [user: [email: user.email, password: user.password,
+                name: user.name, tenantId: user.tenant_id, enabled: true]]
         def resp = openStackRESTService.post(openStackRESTService.KEYSTONE, USERS, body);
         setUserRole(body.user.tenantId, resp.user.id, user.role_id)
+        return resp
     }
 
     def updateUser(def user) {
-        def body = [user : [id : user.id, name : user.name, email : user.email]]
+        def body = [user: [id: user.id, name: user.name, email: user.email]]
 
         if (user.password != "") {
-            body.user << [password : user.password]
+            body.user << [password: user.password]
         }
         def resp = openStackRESTService.put(openStackRESTService.KEYSTONE, "$USERS/$body.user.id", null, body)
         openStackRESTService.put(openStackRESTService.KEYSTONE, "$USERS/$resp.user.id/", null,
@@ -72,7 +72,11 @@ class OpenStackUserService {
         openStackRESTService.delete(openStackRESTService.KEYSTONE, "$USERS/$userId")
     }
 
-    def getUserRole(def userId, def tenantId) {
+    def deleteUsersById(List<String> userIds) {
+        return ServiceUtils.removeItems(this, "deleteUserById", userIds)
+    }
+
+    def getUserRoles(def userId, def tenantId) {
         def resp = openStackRESTService.get(openStackRESTService.KEYSTONE, "$TENANTS/$tenantId/$USERS/$userId/roles")
         return resp.roles
     }
@@ -91,26 +95,18 @@ class OpenStackUserService {
         openStackRESTService.delete(openStackRESTService.KEYSTONE, path);
     }
 
-    void changeUsersRole(def newUsersRoles, tenantId) {
-        for (def userName in newUsersRoles.keySet()) {
-            def userId = getUserByName(userName)?.id
-            def oldUserRole = getUserRole(userId, tenantId)?.id[0]
-            def newUserRole = newUsersRoles.get(userName)
-            if (oldUserRole)
-                deleteUserRole(tenantId, userId, oldUserRole)
-            if (newUserRole)
-                setUserRole(tenantId, userId, newUserRole)
-        }
-    }
-
     def getUsersRoles(def users, def tenantId) {
-        def roles = [:]
+        def userIdsToRoles = [:]
         for (OpenStackUser user in users) {
-            def role = getUserRole(user.id, tenantId)
-            roles[user.id] = new com.paypal.aurora.model.Role(role)
+            userIdsToRoles[user.id] = []
+            def roles = getUserRoles(user.id, tenantId)
+            for (def role in roles) {
+                def roleObj = new com.paypal.aurora.model.Role(role)
+                if(roleObj.id) {
+                    userIdsToRoles[user.id]<<roleObj
+                }
+            }
         }
-        return roles
+        return userIdsToRoles
     }
-
-
 }

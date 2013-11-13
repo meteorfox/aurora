@@ -38,7 +38,7 @@ class TestNetworking(UIBaseTest):
         self.networks.append(name)
 
     def test_02_list_networks(self):
-        ok_(len(self.networks) > 0, "Tenant creation failed so cannot filter the list.")
+        ok_(len(self.networks) > 0, "Network creation failed so cannot filter the list.")
         name = self.networks[0]
         self.uidriver.filter_table(name)
         rows = self.uidriver.parse_table(self.uimap.tbl_networks)
@@ -46,14 +46,14 @@ class TestNetworking(UIBaseTest):
         self.uidriver.filter_table('')
 
     def test_03_show_network(self):
-        ok_(len(self.networks) > 0, "Tenant creation failed so cannot filter the list.")
+        ok_(len(self.networks) > 0, "Network creation failed so cannot filter the list.")
         name = self.networks[0]
         self.uidriver.click(By.LINK_TEXT, name)
         res = self.uidriver.is_element_present(*self.uimap.tbl_show_network)
         ok_(res, "Failed to show Network details.")
 
     def test_04_update_network(self):
-        ok_(len(self.networks) > 0, "Tenant creation failed so cannot filter the list.")
+        ok_(len(self.networks) > 0, "Network creation failed so cannot filter the list.")
         name = self.networks[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_edit)
@@ -72,7 +72,7 @@ class TestNetworking(UIBaseTest):
         ok_(isOK, "Failed to update of Network.")
 
     def test_07_delete_network(self):
-        ok_(len(self.networks) > 0, "Tenant creation failed so cannot delete it.")
+        ok_(len(self.networks) > 0, "Network creation failed so cannot delete it.")
         name = self.networks[0]
         self.uidriver.click(By.LINK_TEXT, name)
         self.uidriver.click(*self.uimap.bt_delete)

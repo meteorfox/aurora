@@ -21,11 +21,6 @@ import java.lang.reflect.Modifier
     static final EntityType<Snapshot> snapshot = create('Snapshot', { it.id })
     static final EntityType<SecurityGroup> securityGroup = create('Security Group', { it.id })
     static final EntityType<Tenant> tenant = create('Tenant', { it.id })
-    static final EntityType<String> domain = create('SimpleDB Domain', { it }, '',
-            'Show metadata about this SimpleDB domain')
-    static final EntityType<FastProperty> fastProperty = create('Fast Property', { it.id }, '', '',
-            { Map attrs, String objectId -> attrs.params = [name: objectId] })
-    static final EntityType<String> terminationPolicyType = create('Termination Policy Type', { it })
     static final EntityType<OpenStackUser> openStackUser = create('Openstack User', { it.id })
     static final EntityType<String> lbaas = create('Policy', { it.id },'','Edit this policy')
 

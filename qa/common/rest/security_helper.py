@@ -90,7 +90,7 @@ class KeypairHelper(BaseRESTHelper):
 
     def delete_keypair(self, pairname):
         params = {'keypairName': pairname}
-        res = self.utils.send_request('DELETE', 'delete_keypair', data=params)
+        res = self.utils.send_request('POST', 'delete_keypair', data=params)
         # res usually contains not very useful [None] so return True/False result.
         remaining = [p for p in self.utils.get_list('keypairs') if p['name'] == pairname]
         return len(remaining) == 0

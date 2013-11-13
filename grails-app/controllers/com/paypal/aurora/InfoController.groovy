@@ -1,36 +1,34 @@
 package com.paypal.aurora
 
-import com.paypal.aurora.exception.RestClientRequestException
 import grails.converters.JSON
 import grails.converters.XML
 
-import javax.servlet.http.HttpServletResponse
-
 class InfoController {
 
-    final static allowedMethods = [index : ['GET']]
+    final static allowedMethods = [index: ['GET']]
 
-    def date, number
     def infoService
+    def configService
+    def sessionStorageService
 
     def index = {
-        try{
-            def info = infoService.getInfo()
-            def model = [info : info]
-            withFormat {
-                html {model}
-                xml {new XML(model).render(response)}
-                json{new JSON(model).render(response)}
-            }
-        } catch (RestClientRequestException e){
-            def error = ExceptionUtils.getExceptionMessage(e)
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            def model = [error : error, flash: [message: error]]
-            withFormat {
-                html { model}
-                xml {new XML(model).render(response)}
-                json {new JSON(model).render(response)}
-            }
+        def info = infoService.getInfo()
+        def model = [info: info]
+        withFormat {
+            html { model }
+            xml { new XML(model).render(response) }
+            json { new JSON(model).render(response) }
+        }
+
+    }
+
+    def environment = {
+        String environmentName = sessionStorageService.getEnvironmentName()
+        def environment = configService.getEnvironmentByName(environmentName)
+        withFormat {
+            html { [environment: new JSON(environment)] }
+            xml { new XML(environment).render(response) }
+            json { new JSON(environment).render(response) }
         }
     }
 }

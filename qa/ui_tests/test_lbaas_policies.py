@@ -19,6 +19,7 @@ class TestPolicies(UIBaseTest):
             self.uidriver.enter_text(self.uimap.ed_rule, rule)
             self.uidriver.click(*self.uimap.bt_submit)
             ok_(*self.uidriver.chk_error_message())
+            self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_policies)
 
             r = self.uidriver.find_row(self.uimap.tbl_policies, lambda r: r['NAME'] == name)
             ok_(len(r) == 1, "Failed to create LBaaS policy.")
@@ -40,6 +41,7 @@ class TestPolicies(UIBaseTest):
         self.uidriver.enter_text(self.uimap.ed_name, name)
         self.uidriver.click(*self.uimap.bt_submit)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_policies)
 
         r = self.uidriver.find_row(self.uimap.tbl_policies, lambda r: r['NAME'] == name)
         ok_(len(r) == 1, "Failed to update name of LBaaS policy.")
@@ -52,6 +54,7 @@ class TestPolicies(UIBaseTest):
         self.uidriver.click(*self.uimap.bt_delete)
         self.uidriver.click(*self.uimap.bt_confirm)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_policies)
         deleted = self.uidriver.wait_for_row_deleted(self.uimap.tbl_policies, lambda s: s['NAME'] == name)
         ok_(deleted, "Failed to delete one LBaaS policy.")
 
@@ -61,6 +64,7 @@ class TestPolicies(UIBaseTest):
         self.uidriver.click(*self.uimap.bt_delete_policy)
         self.uidriver.click(*self.uimap.bt_confirm)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_policies)
         deleted = self.uidriver.wait_for_row_deleted(self.uimap.tbl_policies, lambda s: s['NAME'] == name)
         ok_(deleted, "Failed to delete LBaaS policy from Details page.")
 
@@ -72,6 +76,7 @@ class TestPolicies(UIBaseTest):
         self.uidriver.click(*self.uimap.bt_delete)
         self.uidriver.click(*self.uimap.bt_confirm)
         ok_(*self.uidriver.chk_error_message())
+        self.uidriver.click_menu(self.uimap.menu_lbaas, self.uimap.menu_policies)
         deleted = self.uidriver.wait_for_row_deleted(self.uimap.tbl_policies,
                                                      lambda s: s['NAME'].startswith(self.prefix))
         ok_(deleted, "Failed to delete multiple LBaaS policies.")

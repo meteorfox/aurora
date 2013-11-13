@@ -3,8 +3,8 @@
 # prefix for generated object names
 prefix: 'rest_'
 
-#lab: '172.18.198.44'
-lab: '172.18.172.7'
+lab: '172.18.198.44'
+#lab: '172.18.95.10'
 
 172.18.198.44:
   host: '172.18.198.44'
@@ -66,11 +66,37 @@ lab: '172.18.172.7'
   port: '8085'
   username: 'admin'
   password: 'sjn1lab'
-  environment: 'paypal'
+  environment: 'paypal Grizzly_95_9'
   lab_prefix: 'sjn'
   suffix: '3001'
   sshuser: 'root'
   sshpassword: 'sjn1lab'
   flavor: 'm1.tiny'
   keypair: 'pp_keypair'
+
+'172.18.95.10':
+  host: 172.18.95.10
+  port: '8085'
+  username: 'admin'
+  password: 'sjn1lab'
+  environment: 'paypal Grizzly_95_9'
+  lab_prefix: 'sjn'
+  suffix: '3001'
+  sshuser: 'root'
+  sshpassword: 'sjn1lab'
+  flavor: 'm1.tiny'
+  keypair: 'pp_keypair'
+
+'10.57.138.25':
+  host: 10.57.138.25
+  port: '8080'
+  username: 'admin'
+  password: 'lvs1devqa'
+  environment: 'QA'
+  lab_prefix: ''
+  suffix: '3001'
+  sshuser: 'root'
+  sshpassword: 'sjn1lab'
+  flavor: 'XX-Small'
+  keypair: 'heat_key'
 

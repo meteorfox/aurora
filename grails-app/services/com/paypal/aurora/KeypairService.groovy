@@ -70,6 +70,10 @@ class KeypairService {
         openStackRESTService.delete(openStackRESTService.NOVA, 'os-keypairs/' + name)
     }
 
+    def deleteKeypairs(List <String> keypairNames){
+        def model = ServiceUtils.removeItems(this, "delete", keypairNames)
+        return model
+    }
 
 }
 

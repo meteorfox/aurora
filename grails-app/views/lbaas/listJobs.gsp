@@ -1,26 +1,38 @@
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="lbaas"/>
+    <meta name="menu-level-2" content="jobs"/> 
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'autorefresh.js')}"></script>
+    <script type="text/javascript" src="${resource(dir: 'js', file: 'lbaasJobs-ui.js')}"></script>
     <title>Jobs</title>
-</head>
-<body>
-<script type="text/javascript" src="/js/lbaasJobs-ui.js"></script>
-<script type="text/javascript" src="/js/autorefresh.js"></script>
-<div class="body">
-    <h1>Jobs</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <g:form method="post">
-        <div class="list">
-            <div class="buttons">
-            </div>
-            <div id = 'table_container'>
-                <g:render template="jobs"/>
-            </div>
+  </head>
+  <body>
+
+    <div class="body">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <g:if test="${flash.message}">
+              <div id="message" class="alert alert-info">${flash.message}</div>
+            </g:if>          
+          </div>
         </div>
-    </g:form>
-</div>
-</body>
+        <g:form method="post">
+          <div class="box">
+            <div class="box-header">
+              <span class="title">Jobs</span>
+              <ul class="box-toolbar">
+
+              </ul>
+            </div>
+            <div class="box-content">
+              <g:render template="jobs"/>
+            </div>
+          </div>
+        </g:form>
+      </div>
+    </div>
+  </body>
 </html>

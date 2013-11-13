@@ -1,90 +1,74 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: nik
-  Date: 27.05.13
-  Time: 13:55
-  To change this template use File | Settings | File Templates.
---%>
-
 <html>
-<head>
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="layout" content="main"/>
-    <title>Heat</title>
-</head>
-<body>
-<div class="body">
-    <h1>Stack Details</h1>
-    <g:if test="${flash.message}">
-        <div id="error_message" class="error">${flash.message}</div>
-    </g:if>
-    <div class="dialog">
-        <table id="table_dialogHeat">
-            <tbody>
-            <tr class="header">Info</tr>
-            <tr class="prop" title="Application name from Cloud Application Registry">
-                <td class="name">Name:</td>
-                <td class="value">${stack.name}</td>
-            </tr>
-            <tr class="prop">
-                <td class="name">ID:</td>
-                <td class="value">${stack.id}</td>
-            </tr>
-            <tr class="prop">
-                <td class="name">Description:</td>
-                <td class="value">${stack.description}</td>
-            </tr>
-            <tr class="prop">
-                <td class="name">Timeout:</td>
-                <td class="value">${stack.timeout} Minutes</td>
-            </tr>
-            <tr class="prop">
-                <td class="name">Rollback:</td>
-                <td class="value">
-                    <g:if test="${stack.disable_rollback == false}">
-                        Enabled
-                    </g:if>
-                    <g:else>
-                        Disabled
-                    </g:else>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+    <meta name="layout" content="mainWithNav"/>
+    <meta name="menu-level-1" content="heat"/> 
+    <meta name="menu-level-3" content="Stack Detail"/> 
+    <title>Cloud Formation - Stack Detail</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <g:if test="${flash.message}">
+            <div id="message" class="alert alert-info">${flash.message}</div>
+          </g:if>          
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="box">
+            <div class="box-header">
+              <div class="title">Stack Info</div>
+            </div>
+            <div class="box-content">
+              <table class="table table-normal table-striped">
+                <tbody>
+                  <tr><td>Name</td><td>${stack.name}</td></tr>
+                  <tr><td>ID</td><td>${stack.id}</td></tr>
+                  <tr><td>Description</td><td>${stack.description}</td></tr>
+                  <tr><td>Timeout</td><td>${stack.timeout} Minutes</td></tr>
+                  <tr><td>Rollback</td><td><g:if test="${stack.disable_rollback == false}">Enabled</g:if><g:else>Disabled</g:else></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="box">
+            <div class="box-header">
+              <div class="title">Stack Status</div>
+            </div>
+            <div class="box-content">
+              <table class="table table-normal table-striped">
+                <tbody>
+                  <tr><td>Created</td><td>${stack.created}</td></tr>
+                  <tr><td>Last Updated</td><td>${stack.updated}</td></tr>
+                  <tr><td>Status</td><td>${stack.status}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <table id="table_statusHeat">
-            <tbody>
-            <tr class="header">Status</tr>
-            <tr class="prop">
-                <td class="name">Created:</td>
-                <td class="value">${stack.created}</td>
-            </tr>
-            <tr class="prop">
-                <td class="name">Last Updated:</td>
-                <td class="value">${stack.updated}</td>
-            </tr>
-            <tr class="prop">
-                <td class="name">Status:</td>
-                <td class="value">${stack.status}</td>
-            </tr>
 
-            </tbody>
-        </table>
+      <div class="box">
+        <div class="box-header">
+          <div class="title">Parameters</div>
+        </div>
+        <div class="box-content">
+          <table class="table table-normal table-striped">
 
-        <table id="table_parametersHeat">
             <tbody>
-            <tr class="header">Parameters</tr>
             <g:each in="${stack.parameters}" var="parameter">
-             <tr class="prop">
-                    <td class="name">${parameter.key}</td>
-                    <td class="value">${parameter.value}</td>
-             </tr>
+              <tr><td>${parameter.key}</td><td>${parameter.value}</td></tr>
             </g:each>
 
             </tbody>
-        </table>
-
+          </table>
+        </div>
+      </div>
     </div>
-</div>
-</body>
+  </body>
 </html>

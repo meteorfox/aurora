@@ -115,8 +115,8 @@ class TenantHelper(BaseRESTHelper):
         Return list of roles. Each role is a dict with role_id and role_name keys.
         """
         if tenant is None:
-            tenant = self.utils.get_list('tenants')[0]
-        res = self.__get_roles_users_tenantusers(tenant['id'])
+            tenant = self.utils.get_list('tenants')[0]['id']
+        res = self.__get_roles_users_tenantusers(tenant)
         return res['roles']
 
     def get_all_users(self, tenant=None):
@@ -177,7 +177,7 @@ class UserHelper(BaseRESTHelper):
             tenant = self.thelper.create_tenant()
             params['tenant_id'] = tenant['id']
         if params['role_id'] == '':
-            role = self.thelper.get_all_roles(tenant)[0]
+            role = self.thelper.get_all_roles(params['tenant_id'])[0]
             params['role_id'] = role['id']
 
         res = self.utils.send_request("POST", 'create_user', data=params)

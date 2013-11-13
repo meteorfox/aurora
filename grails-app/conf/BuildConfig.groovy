@@ -19,7 +19,7 @@ codenarc {
         }
     }
     ruleSetFiles = 'file:grails-app/conf/CodeNarcRuleSet.groovy'
-    maxPriority1Violations = 1
+    maxPriority1Violations = 10
 }
 
 coverage {
@@ -27,9 +27,8 @@ coverage {
     exclusions = ['**/*Controller*', '**/*$*', '**/model/**', '**/auth/**', '**/exception/**', '**/format/**', '**/joke/**',
                   '**/listeners/**', '**/util/**', '**/*Filter*', '**/*Command*', '**/*TagLib*', '**/*Realm*', '**/*Utils*',
                   '**/Requests*', '**/OpenStackRESTService*', '**/EntityType*', '**/ConfigService*', '**/EventSubscribeService*',
-                  '**/JokeService*', '**/OpenStackService*', '**/SessionStorageService*', '**/RestApiHandlerService*',
-                  '**/Styler*', '**/FastProperty*', '**/CodeNarcRuleSet*', '**/Occasion*', '**/ServiceInitLoggingBeanPostProcessor*',
-                  '**/Constant*', '**/*gsp_*']
+                  '**/AuthService*','**/JokeService*', '**/InfoService*', '**/OpenStackService*', '**/RestApiHandlerService*', '**/EventListenerService*',
+                  '**/CodeNarcRuleSet*', '**/Occasion*', '**/ServiceInitLoggingBeanPostProcessor*', '**/Constant*', '**/CustomPatternLayout*', '**/*gsp_*']
 }
 
 grails.project.dependency.resolution = {
@@ -116,7 +115,12 @@ grails.project.dependency.resolution = {
                 'org.codehaus.gpars:gpars:1.0.0',
 
                 // For REST client
-                'org.codehaus.groovy.modules.http-builder:http-builder:0.6'
+                'org.codehaus.groovy.modules.http-builder:http-builder:0.6',
+
+                // Web flow framework
+                "org.grails:grails-webflow:$grailsVersion",
+
+                'mysql:mysql-connector-java:5.1.26'
 
         ) { // Exclude superfluous and dangerous transitive dependencies
             excludes(
@@ -140,6 +144,9 @@ grails.project.dependency.resolution = {
         compile ":context-param:1.0"
         compile ':shiro:1.1.4'
         compile ":standalone:1.1.1"
+        compile ':webflow:2.0.0', {
+            exclude 'grails-webflow'
+        }
 
         test ':spock:0.7'
 

@@ -1,15 +1,13 @@
-var finalStatus = ['available', undefined];
+var finalStatus = ['available', undefined, 'error'];
+
 
 var refreshVolumeTable = function () {
     var container = jQuery('#table_container');
-    jQuery.ajax({
-        url: '/snapshot/_snapshots',
-        dataType: 'html',
-        success: function (data) {
-            container.html(data);
-        }
-    });
-    return null;
+    var url = rootContextPath + '/snapshot/_snapshots';
+    var cellsToUpdate = ["snapshot_status"];
+    var findIdName = "selectedSnapshots";
+    var rowToUpdate = "snapshot_row";
+    jQuery.refreshTable(url, rowToUpdate, cellsToUpdate, findIdName);
 };
 
 
@@ -34,15 +32,15 @@ function showPageUpdater() {
                         status = undefined;
                     }
                     if (status && !in_array(status, finalStatus)) {
-                        jQuery('#snapshot_status_value').html(status + '<img src="/images/spinner.gif"/>');
+                        jQuery('#snapshot_status_value').html(status + ' ' + HeaderUtils.getSpinner());
                     } else {
                         clearInterval(interval);
-                        document.location = '/snapshot/list';
+                        document.location = rootContextPath + '/snapshot/list';
                     }
                 },
                 error: function (textStatus, errorThrown) {
                     clearInterval(interval);
-                    document.location = '/snapshot/list';
+                    document.location = rootContextPath + '/snapshot/list';
                 }
             });
         }
@@ -58,7 +56,7 @@ jQuery(function () {
     // autorefresh status on list-page
     jQuery.each(jQuery('.snapshot_status'), function () {
         if (!in_array(jQuery.trim(jQuery(this).html()), finalStatus)) {
-            jQuery(this).html(jQuery(this).html() + '<img src="/images/spinner.gif"/>');
+            jQuery(this).html(jQuery(this).html() + ' ' + HeaderUtils.getSpinner());
             statusUpdate(jQuery(this));
         }
     });
@@ -66,7 +64,7 @@ jQuery(function () {
     //autorefresh status on show-page
     var snapshotStatusValue = jQuery('#snapshot_status_value');
     if (snapshotStatusValue.length && !in_array(snapshotStatusValue[0].innerText, finalStatus)) {
-        snapshotStatusValue.html(snapshotStatusValue.html() + '<img src="/images/spinner.gif"/>');
+        snapshotStatusValue.html(snapshotStatusValue.html() + ' ' + HeaderUtils.getSpinner());
         showPageUpdater();
     }
 });

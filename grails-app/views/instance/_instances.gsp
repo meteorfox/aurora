@@ -1,69 +1,35 @@
 <%@ page import="com.paypal.aurora.Constant" %>
-<table id="table_listInstance" class="sortable">
+<table id="table_listInstance" class="sortable table table-normal filtered">
     <thead>
     <tr>
-        <th class="checkboxTd">&thinsp;x</th>
-        <th>Name</th>
+        <td class="checkboxTd">&thinsp;x</td>
+        <td>Name</td>
+        <g:if test="${session.sessionStorage.allTenants}">
+            <td>Tenant</td>
+        </g:if>
         <g:if test="${isUseExternalFLIP}">
-            <th>IP Address</th>
+            <td>IP Address</td>
         </g:if>
         <g:else>
-            <th>IP Addresses</th>
+            <td>IP Addresses</td>
         </g:else>
         <shiro:hasRole name="${Constant.ROLE_ADMIN}">
-            <th>Host</th>
+            <td>Host</td>
         </shiro:hasRole>
-        <th>Status</th>
-        <th>Task</th>
-        <th>Power</th>
+        <td>Status</td>
+        <td>Task</td>
+        <td>Power</td>
         <g:if test="${isUseExternalFLIP}">
-            <th>Action</th>
+            <td>Action</td>
         </g:if>
+        <td hidden="hidden" style="display: none;"> </td>
     </tr>
     </thead>
-    <tbody>
-    <g:each var="mi" in="${instances}" status="i">
-        <tr class="${(i % 2) == 0 ? 'odd' : 'even'} instance_row">
-            <td><g:if test="${mi.instanceId}"><g:checkBox name="selectedInstances" value="${mi.instanceId}"
-                                                          id="checkBox_${mi.instanceId}"
-                                                          checked="0" class="requireLogin"/></g:if></td>
-            <td class='instance_show_link'><g:linkObject type="instance" displayName="${mi.name}"
-                                                      id="${mi.instanceId}"/></td>
-            <td>
-                <g:if test="${isUseExternalFLIP}">
-                    ${mi.displayedIp}
-                </g:if>
-                <g:else>
-                    <ul class="links">
-                        <g:each in="${mi.networks}" var="network">
-                            <li><b>${network.pool}</b> <a class="showIpHelp">${network.ip}</a></li>
-                        </g:each>
-                        <g:each in="${mi.floatingIps}" var="fip">
-                            <li>
-                                <g:if test="${fip.pool}"><b>${fip.pool}</b></g:if>
-                                <a class="showIpHelp">${fip.ip}</a>
-
-                            </li>
-                        </g:each>
-                    </ul>
-                </g:else>
-            </td>
-            <shiro:hasRole name="${Constant.ROLE_ADMIN}">
-                <td>${mi.host}</td>
-            </shiro:hasRole>
-            <td class='instance_status'>${mi.status}</td>
-            <td class='instance_taskStatus'>
-                ${mi.taskStatus}
-                <g:if test="${mi.taskStatus}">
-                    <img src="${resource(dir: 'images', file: 'spinner.gif')}"/>
-                </g:if>
-            </td>
-            <td>${mi.powerStatus}</td>
-            <g:if test="${isUseExternalFLIP}">
-                <td><span class="buttons"><a class="showFloatIpHelp" title="${mi.displayedIp}">Login</a></span></td>
-            </g:if>
-            <td class="instance_id" hidden="hidden">${mi.instanceId}</td>
-        </tr>
+    <tbody id="originalTbody">
+    <g:each var="mi" in="${instances}">
+      <g:set var="instance" value="${mi}"/>
+      <g:render template="instanceRow"/>
+        
     </g:each>
     </tbody>
 </table>

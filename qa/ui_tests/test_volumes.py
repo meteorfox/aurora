@@ -57,12 +57,12 @@ class TestVolumes(UIBaseTest):
         image = self.imagehelper.create_image({'name': im_name})
         # create instance via rest request
         ins_name = self.utils.generate_name(4)
-        instance = self.ihelper.create_instance({'name': ins_name, 'image': image['id']})
+        instance = self.ihelper.create_instance({'name': ins_name, 'image': image['id']}, attempts=1)
         ok_(instance is not False, 'Cannot create instance for volume attach testing. Interrupting.')
 
         # attach volume
         vol_name = self.volumes[0]
-        device = "/dev/vd" + self.utils.generate_chars(4).lower()
+        device = "/dev/vd" + self.utils.generate_chars(2).lower()
         self.uidriver.click(By.LINK_TEXT, vol_name)
         self.uidriver.click(*self.uimap.bt_edit_attach)
         self.uidriver.select_cb_option(self.uimap.cb_attach_to_instance, ins_name)
@@ -75,6 +75,7 @@ class TestVolumes(UIBaseTest):
         ok_(rows is not False, "Failed to attach volume to {0} on {1}".format(ins_name, device))
 
     def test_04_detach_volume(self):
+        ok_(len(self.volumes) == 1, 'Volume creation failed in prev. test-case. Interrupting.')
         name = self.volumes[0]
         rule = lambda v: v['NAME'] == name and v['STATUS'] == 'in-use'
         r = self.uidriver.find_row(self.uimap.tbl_volumes, rule)

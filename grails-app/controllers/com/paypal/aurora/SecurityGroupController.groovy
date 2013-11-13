@@ -22,6 +22,7 @@ class SecurityGroupController {
         try{
             securityGroups = securityGroupService.getAllSecurityGroups()
         } catch (RestClientRequestException e){
+            response.status = ExceptionUtils.getExceptionCode(e)
             error = ExceptionUtils.getExceptionMessage(e)
         }
         def model = [securityGroups : securityGroups, errors : error]
@@ -35,13 +36,15 @@ class SecurityGroupController {
     def show = {
         try {
             def securityGroup = securityGroupService.getSecurityGroupById(params.id)
-                def model = [securityGroup : securityGroup]
+            def model = [securityGroup : securityGroup]
+            params.isDefault = securityGroup.isDefault()
             withFormat {
                 html { [parent:"/securityGroup",securityGroup: securityGroup] }
                 xml { new XML(model).render(response) }
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def errors = ExceptionUtils.getExceptionMessage(e)
             withFormat {
                 html { flash.message = errors; redirect(action: 'list')}
@@ -56,7 +59,9 @@ class SecurityGroupController {
     }
 
     def editRules = {
-        params.securityGroup = securityGroupService.getSecurityGroupById(params.id)
+        def securityGroup = securityGroupService.getSecurityGroupById(params.id)
+        params.securityGroup = securityGroup
+        params.isDefault = securityGroup.isDefault()
         params.ipProtocols = IP_PROTOCOLS
         params.sourceGroups = getSourceGroups()
         [parent: "/securityGroup/show/${params.id}",
@@ -80,6 +85,7 @@ class SecurityGroupController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def errors = ExceptionUtils.getExceptionMessage(e)
                 withFormat {
                     html { flash.message = errors; redirect(action: 'editRules', params: [id: params.id])}
@@ -101,27 +107,14 @@ class SecurityGroupController {
 
     def deleteRule = {
         List<String> rulesIds = Requests.ensureList(params.selectedRules)
-        List<String> notRemovedRuleIds = []
-        def deleted = []
-        def error = [:]
-        for (rulesId in rulesIds) {
-            try {
-                securityGroupService.deleteSecurityGroupRuleById(rulesId)
-                deleted << rulesId
-            } catch (RestClientRequestException e) {
-                log.error(e)
-                error[rulesId] = ExceptionUtils.getExceptionMessage(e)
-                notRemovedRuleIds << rulesId
-            }
-        }
-        def flashMessage = null
-        if (notRemovedRuleIds) {
-            def ids = notRemovedRuleIds.join(',')
-            flashMessage = "Could not delete rules with id: ${ids}"
-        }
-        def model = [deleted: deleted, not_deleted_ids : notRemovedRuleIds, errors : error]
+        def model = securityGroupService.deleteSecurityGroupRulesById(rulesIds)
+        def flashMessage = ResponseUtils.defineMessageByList("Could not delete rules with id: ", model.notRemovedItems)
+        response.status = ResponseUtils.defineResponseStatus(model, flashMessage)
         withFormat {
-            html { flash.message = flashMessage; redirect(action: 'editRules', params: [id: params.id])}
+            html {
+                flash.message = flashMessage;
+                redirect(action: 'editRules', params: [id: params.id])
+            }
             xml { new XML(model).render(response) }
             json { new JSON(model).render(response) }
         }
@@ -144,6 +137,7 @@ class SecurityGroupController {
                     json { new JSON(model).render(response) }
                 }
             } catch (RestClientRequestException e) {
+                response.status = ExceptionUtils.getExceptionCode(e)
                 def error = ExceptionUtils.getExceptionMessage(e)
                 def model = [errors : error]
                 withFormat {
@@ -166,6 +160,7 @@ class SecurityGroupController {
                 json { new JSON(model).render(response) }
             }
         } catch (RestClientRequestException e) {
+            response.status = ExceptionUtils.getExceptionCode(e)
             def errors = ExceptionUtils.getExceptionMessage(e)
             withFormat {
                 html { flash.message = errors; chain(action: 'show', params: params)}
