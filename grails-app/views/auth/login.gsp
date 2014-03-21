@@ -5,6 +5,10 @@
     <meta name="layout" content="mainWithoutNav"/>   
 
     <script type="text/javascript" src="${resource(dir: 'js', file: 'login.js')}"></script>
+    <script type="text/javascript">
+        var signInUrl = "${resource(dir: 'auth', file: 'signIn.json')}";
+        var signOutUrl = "${resource(dir: 'auth', file: 'signOut')}";
+    </script>
     <title>Sign In</title>
 
   </head>
