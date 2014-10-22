@@ -7,11 +7,21 @@ The project 'aurora' is developed using 'Netflix OSS - Asgard' framework to mana
 - This fork's main goal is to achieve basic compatiblity with the Rackspace Public Cloud's API, perhaps breaking compatiblity with other OpenStack API.
 - This fork is only to satisfy my personal intereset and curisioty about Aurora, developed under my free time, and it has no relation to Rackspace, the company, or their strategy in anyway at all.
 
-## DOWNLOAD (Deprecated -this are behind some Proxy)
+## DOWNLOAD 
+
+Deprecated - these links are behind Ebay's proxy, which I have no way to control, and these links were not even added by me.
 
 ~~Grab the [latest standalone jar release](https://ebay.box.com/s/4elhlhfvdce1t5sq2lm2)~~
 
 ~~Grab the [latest war release](https://ebay.box.com/s/c29kypl21q7tj62n3czw)~~
+
+Recommended way is to build from Source.
+
+## Build from Source
+
+### Requirements
+- Java 7 - (Java 8 does not work)
+- Grails 2.1
 
 ## How to run aurora?
 
