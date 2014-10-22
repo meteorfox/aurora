@@ -21,7 +21,8 @@ class InstanceService {
     def quantumDNSService
 
     def listAll(boolean fillFloatingIPs = false, boolean forAllTenants = false) {
-        def resp = openStackRESTService.get(openStackRESTService.NOVA, 'servers/detail', forAllTenants ? ['all_tenants': 'True'] : null)
+		def tenantID = sessionStorageService.getTenant().id
+        def resp = openStackRESTService.get(openStackRESTService.NOVA, "${tenantID}/servers/detail", forAllTenants ? ['all_tenants': 'True'] : null)
         List<Instance> result = [] as LinkedList
         for (server in resp.servers) {
             def instance = new Instance(server)
@@ -64,7 +65,8 @@ class InstanceService {
     }
 
     Instance getById(String id, boolean fillFloatingIPs = true, boolean fillFQND = false) {
-        def resp = openStackRESTService.get(openStackRESTService.NOVA, "servers/$id")
+		def tenantID = sessionStorageService.getTenant().id
+        def resp = openStackRESTService.get(openStackRESTService.NOVA, "${tenantID}/servers/$id")
         Instance instance = new Instance(resp.server)
         ServiceUtils.fillTenantName(instance, sessionStorageService.tenants)
         if (fillFQND && quantumDNSService.isEnabled()) {

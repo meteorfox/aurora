@@ -10,9 +10,11 @@ class FlavorService {
     static transactional = false
 
     def openStackRESTService
+	def sessionStorageService
 
     def listAll() {
-        def resp = openStackRESTService.get(openStackRESTService.NOVA, 'flavors/detail')
+		def tenantID = sessionStorageService.getTenant().id
+        def resp = openStackRESTService.get(openStackRESTService.NOVA, "${tenantID}/flavors/detail")
         List<Flavor> result = [] as LinkedList
         for (flavor in resp.flavors) {
             result.push(new Flavor(flavor))
@@ -21,7 +23,8 @@ class FlavorService {
     }
 
     def delete(String id) {
-        openStackRESTService.delete(openStackRESTService.NOVA, "flavors/$id")
+		def tenantID = sessionStorageService.getTenant().id
+        openStackRESTService.delete(openStackRESTService.NOVA, "${tenantID}/flavors/$id")
     }
 
     def deleteFlavors(List <String> flavorIds){
@@ -50,7 +53,8 @@ class FlavorService {
     }
 
     Flavor getById(String id) {
-        def resp = openStackRESTService.get(openStackRESTService.NOVA, "flavors/$id")
+		def tenantID = sessionStorageService.getTenant().id
+        def resp = openStackRESTService.get(openStackRESTService.NOVA, "${tenantID}/flavors/$id")
         return new Flavor(resp.flavor)
     }
 }

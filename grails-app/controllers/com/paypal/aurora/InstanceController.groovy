@@ -80,7 +80,7 @@ class InstanceController {
         }
     }
 
-    private def getModelForList(def fillFloatingIPs = true) {
+    private def getModelForList(def fillFloatingIPs = false) {
         List<Instance> instances = instanceService.listAll(fillFloatingIPs, sessionStorageService.allTenants)
         [instances: instances, isUseExternalFLIP: networkService.useExternalFLIP,
                 showAdminCredentials: instanceService.showAdminLoginCredentials,

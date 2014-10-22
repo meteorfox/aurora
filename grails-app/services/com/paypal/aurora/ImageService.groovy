@@ -15,7 +15,7 @@ class ImageService {
     def openStackRESTService
 
     private def getAllImagesOrSnapshots(def type) {
-        def resp = openStackRESTService.get(openStackRESTService.GLANCE, "${IMAGES}/detail")
+        def resp = openStackRESTService.get(openStackRESTService.GLANCE, "${IMAGES}")
         def images = []
         for (im in resp.images) {
             def image = new Image(im)
@@ -36,7 +36,7 @@ class ImageService {
     }
 
     def getImageById(def imageId) {
-        def headers = openStackRESTService.head(openStackRESTService.GLANCE, "${IMAGES}/${imageId}")
+        def headers = openStackRESTService.get(openStackRESTService.GLANCE, "${IMAGES}/${imageId}")
         createImageFromHeaders(headers)
     }
 
@@ -71,79 +71,11 @@ class ImageService {
         return false
     }
 
-    private static def createImageFromHeaders(def headers) {
-        Image image = new Image()
+    private static def createImageFromHeaders(def imageResponse) {
+        Image image = new Image(imageResponse)
         SnapshotProperties snapshotProperties = new SnapshotProperties()
 
-        def values = headers*.buffer*.toString()
-        def cutValue = { String value -> value.substring(value.indexOf(':') + 1).trim() }
-
-        values.each() { it ->
-            if (it.contains(X_META_IMAGE)) {
-                def someValue = cutValue(it)
-                if (!it.contains('Property')) {
-                    if (it.contains('-Id')) {
-                        image.id = someValue
-                    }
-                    if (it.contains('-Name')) {
-                        image.name = someValue
-                    }
-                    if (it.contains('-Is_public')) {
-                        image.shared = someValue.toLowerCase()
-                    }
-                    if (it.contains('-Status')) {
-                        image.status = someValue
-                    }
-                    if (it.contains('-Min_disk')) {
-                        image.minDisk = someValue
-                    }
-                    if (it.contains('-Min_ram')) {
-                        image.minRam = someValue
-                    }
-                    if (it.contains('-Created_at')) {
-                        image.created = someValue
-                    }
-                    if (it.contains('-Updated_at')) {
-                        image.updated = someValue
-                    }
-                    if (it.contains('-Container_format')) {
-                        image.containerFormat = someValue
-                    }
-                    if (it.contains('-Disk_format')) {
-                        image.diskFormat = someValue
-                    }
-                    if (it.contains('-Checksum')) {
-                        image.checksum = someValue
-                    }
-                }else{
-                    if (it.contains('-User_id')) {
-                        snapshotProperties.user_id = someValue
-                    }
-                    if (it.contains('-Image_state')) {
-                        snapshotProperties.image_state = someValue
-                    }
-                    if (it.contains('-Image_type')) {
-                        snapshotProperties.image_type = someValue
-                    }
-                    if (it.contains('-Image_location')) {
-                        snapshotProperties.image_location = someValue
-                    }
-                    if (it.contains('-Instance_uuid')) {
-                        snapshotProperties.instance_uuid = someValue
-                    }
-                    if (it.contains('-Base_image_ref')) {
-                        snapshotProperties.base_image_ref = someValue
-                    }
-                    if (it.contains('-Owner_id')) {
-                        snapshotProperties.owner_id = someValue
-                    }
-                }
-            }
-        }
-        if (snapshotProperties.image_type == "snapshot"){
-            image.type = snapshotProperties.image_type
-            image.properties = snapshotProperties
-        }
+    
         image
     }
 

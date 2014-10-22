@@ -106,7 +106,7 @@ grails.project.dependency.resolution = {
                 'org.codenarc:CodeNarc:0.19',
 
                 // This fixes ivy resolution issues we had with our transitive dependency on 1.4.
-                'commons-codec:commons-codec:1.5',
+                'commons-codec:commons-codec:1.6',
 
                 // Call Perforce in process. Delete when user data no longer come from Perforce at deployment time.
                 'com.perforce:p4java:2010.1.269249',

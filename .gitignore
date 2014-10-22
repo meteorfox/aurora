@@ -1,5 +1,7 @@
 # Created by https://www.gitignore.io
 
+aurora.log
+
 ### Java ###
 *.class
 
@@ -49,6 +51,10 @@ hs_err_pid*
 
 # "temporary" build files
 /target
+
+projectFilesBackup/
+target-eclipse/
+work/
 
 
 ### Intellij ###
@@ -111,6 +117,8 @@ tmp/
 local.properties
 .settings/
 .loadpath
+.classpath
+.project
 
 # External tool builders
 .externalToolBuilders/
