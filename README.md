@@ -1,12 +1,17 @@
 ## DESCRIPTION
 
-The project 'aurora' is developed using 'Netflix OSS - Asgard' framework to manage OpenStack based Cloud across multiple-datacenters and regions. Currently, it is supporting Folsom and Grizzly releases of OpenStack and using APIs instead of CLI for services interaction. 
+The project 'aurora' is developed using 'Netflix OSS - Asgard' framework to manage OpenStack based Cloud across multiple-datacenters and regions. Currently, it is supporting Folsom and Grizzly releases of OpenStack and using APIs instead of CLI for services interaction.
 
-## DOWNLOAD
+### Notes about this Fork
 
-Grab the [latest standalone jar release](https://ebay.box.com/s/4elhlhfvdce1t5sq2lm2)
+- This fork's main goal is to achieve basic compatiblity with the Rackspace Public Cloud's API, perhaps breaking compatiblity with other OpenStack API.
+- This fork is only to satisfy my personal intereset and curisioty about Aurora, developed under my free time, and it has no relation to Rackspace, the company, or their strategy in anyway at all.
 
-Grab the [latest war release](https://ebay.box.com/s/c29kypl21q7tj62n3czw)
+## DOWNLOAD (Deprecated -this are behind some Proxy)
+
+~~Grab the [latest standalone jar release](https://ebay.box.com/s/4elhlhfvdce1t5sq2lm2)~~
+
+~~Grab the [latest war release](https://ebay.box.com/s/c29kypl21q7tj62n3czw)~~
 
 ## How to run aurora?
 
